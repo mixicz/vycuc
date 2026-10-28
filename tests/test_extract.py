@@ -3,7 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from poc.extract import page_texts, rules
+import pytest
+
+from poc.extract import LLMS, SCHEMA, load_extractor, page_texts, parse_documents, rules
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -87,3 +89,27 @@ def test_cli_records_error_and_continues(tmp_path):
     assert "error" in json.loads((out / "bad.pdf.json").read_text())
     good = json.loads((out / "good.pdf.json").read_text())
     assert good["documents"][0]["total"] == 7.80
+
+
+def test_schema_requires_every_label_field():
+    doc = SCHEMA["properties"]["documents"]["items"]
+    assert set(doc["required"]) == {"type", "payment", "number", "variabilni_symbol", "issue_date",
+                                    "duzp", "due_date", "currency", "supplier", "vat", "total",
+                                    "to_pay", "items"}
+
+
+def test_parse_documents():
+    assert parse_documents('{"documents": [{"total": 1.5}]}') == [{"total": 1.5}]
+    with pytest.raises(ValueError):
+        parse_documents('{"documents": []}')
+    with pytest.raises(ValueError):
+        parse_documents("not json")
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not LLMS["qwen3.5-2b"].exists(), reason="model not downloaded")
+def test_llm_reads_invoice():
+    run, meta = load_extractor("qwen3.5-2b")
+    (d,) = run(INVOICE)
+    assert d["supplier"]["ico"] == "12345679" and abs(d["total"] - 4615.24) < 0.01
+    assert meta["model_bytes"] > 1e9

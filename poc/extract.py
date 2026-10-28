@@ -104,6 +104,76 @@ def rules(text: str, client_ico: str | None = None) -> dict:
 
 LOADERS = {"rules": lambda: lambda text: [rules(text, CLIENT_ICO)]}
 
+# --- (b) small LLM on CPU, (c) VLM: shared schema and prompt -------------------
+
+TYPES = ["receivedInvoice", "issuedInvoice", "receivedCreditNotice", "receivedAdvanceInvoice",
+         "issuedAdvanceInvoice", "receivedProformaInvoice", "receivedAdvanceTaxDocument",
+         "commitment", "receipt"]
+_S, _N = {"type": ["string", "null"]}, {"type": ["number", "null"]}
+_D = {"type": ["string", "null"], "description": "YYYY-MM-DD"}
+
+
+def _obj(props: dict) -> dict:
+    return {"type": "object", "properties": props, "required": list(props)}
+
+
+DOC_SCHEMA = _obj({
+    "type": {"enum": TYPES}, "payment": {"enum": ["transfer", "cash", "card", "cod", None]},
+    "number": _S, "variabilni_symbol": _S, "issue_date": _D, "duzp": _D, "due_date": _D,
+    "currency": {"type": "string"},
+    "supplier": _obj({k: _S for k in ("name", "ico", "dic", "street", "city", "zip", "country")}),
+    "vat": {"type": "array", "items": _obj({k: {"type": "number"} for k in ("rate", "base", "vat")})},
+    "total": _N, "to_pay": _N,
+    "items": {"type": "array", "items": _obj({"text": {"type": "string"}, "quantity": _N, "unit": _S,
+                                              "unit_price": _N, "vat_rate": _N, "base": _N, "total": _N})},
+})
+SCHEMA = _obj({"documents": {"type": "array", "items": DOC_SCHEMA, "minItems": 1}})
+
+PROMPT = """You extract accounting data from Czech invoices and receipts. The input may be OCR text with errors.
+Return JSON matching the schema, with one entry in "documents" per distinct document. Ignore card-terminal slips.
+- The customer is our client. "supplier" is the seller/issuer (dodavatel, prodávající).
+- type: receivedInvoice = faktura; receivedCreditNotice = dobropis / opravný daňový doklad;
+  receivedAdvanceInvoice = zálohová faktura; receivedProformaInvoice = proforma / "není daňový doklad";
+  receivedAdvanceTaxDocument = daňový doklad k přijaté platbě; commitment = other payable (e.g. insurance
+  premium notice); receipt = účtenka / pokladní doklad from a till.
+- payment: transfer = převodem, cash = hotově, card = kartou, cod = dobírka, null if not stated.
+- Dates as YYYY-MM-DD. Amounts as numbers with a dot (1 105,00 -> 1105.00).
+- ico = IČ/IČO (8 digits). dic = DIČ (e.g. CZ12345678).
+- vat: one line per VAT rate from the VAT summary (rekapitulace DPH): rate in %, base without VAT, VAT amount.
+  Empty if the supplier is not a VAT payer.
+- total = amount including VAT. to_pay = amount to pay (k úhradě) after rounding or deducted advances.
+- Use null for anything not on the document. Never invent values."""
+
+LLMS = {"qwen3.5-2b": MODELS / "Qwen3.5-2B-Q4_K_M.gguf",
+        "qwen3.5-4b": MODELS / "Qwen3.5-4B-Q4_K_M.gguf"}
+MAX_CHARS = 12000  # ponytail: long multi-page bills are truncated; chunk if it costs accuracy
+
+
+def parse_documents(s: str) -> list[dict]:
+    try:
+        docs = json.loads(s)["documents"]
+    except (json.JSONDecodeError, KeyError, TypeError) as e:
+        raise ValueError(f"bad model output: {s[:200]!r}") from e
+    if not docs:
+        raise ValueError("model returned no documents")
+    return docs
+
+
+def _load_llm(path: Path):
+    import os
+
+    from llama_cpp import Llama
+    llm = Llama(model_path=str(path), n_ctx=8192, n_threads=len(os.sched_getaffinity(0)), verbose=False)
+
+    def run(text: str) -> list[dict]:
+        r = llm.create_chat_completion(
+            messages=[{"role": "system", "content": PROMPT}, {"role": "user", "content": text[:MAX_CHARS]}],
+            response_format={"type": "json_object", "schema": SCHEMA},
+            temperature=0, max_tokens=3000)
+        return parse_documents(r["choices"][0]["message"]["content"])
+    return run
+
+
 # --- CLI -----------------------------------------------------------------------
 
 
@@ -156,8 +226,9 @@ def main(extractor: str, out_dir: str, sources: list[str]) -> None:
 
 def load_extractor(name: str):
     """-> (fn(input) -> list[dict], meta dict). meta may hold 'finish': () -> dict."""
+    if name in LLMS:
+        return _load_llm(LLMS[name]), {"model_bytes": LLMS[name].stat().st_size}
     return LOADERS[name](), {}
-
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2], sys.argv[3:])
