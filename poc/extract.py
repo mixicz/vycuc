@@ -138,10 +138,13 @@ Return JSON matching the schema, with one entry in "documents" per distinct docu
   premium notice); receipt = účtenka / pokladní doklad from a till.
 - payment: transfer = převodem, cash = hotově, card = kartou, cod = dobírka, null if not stated.
 - Dates as YYYY-MM-DD. Amounts as numbers with a dot (1 105,00 -> 1105.00).
+- duzp = DUZP / datum zdanitelného plnění (date of taxable supply), never splatnost (due_date).
+  If no DUZP is printed (e.g. receipts), duzp = issue_date.
 - ico = IČ/IČO (8 digits). dic = DIČ (e.g. CZ12345678).
 - vat: one line per VAT rate from the VAT summary (rekapitulace DPH): rate in %, base without VAT, VAT amount.
   Empty if the supplier is not a VAT payer.
-- total = amount including VAT. to_pay = amount to pay (k úhradě) after rounding or deducted advances.
+- total = exact amount including VAT before rounding (base + VAT, e.g. 1234.56).
+  to_pay = amount to pay (k úhradě) after rounding or deducted advances (e.g. 1235.00).
 - Use null for anything not on the document. Never invent values."""
 
 LLMS = {"qwen3.5-2b": MODELS / "Qwen3.5-2B-Q4_K_M.gguf",

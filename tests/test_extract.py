@@ -160,3 +160,17 @@ def test_vram_sampler_counts_only_the_model_not_the_desktop():
     with urllib.request.urlopen("http://localhost:11434/api/ps") as r:
         expected = next(m["size_vram"] for m in json.load(r)["models"] if m["name"] == model)
     assert vram_sampler(model)()["peak_vram_bytes"] == expected
+
+
+ROUNDED = INVOICE.replace("Celkem k úhradě: 4 615,24 Kč", "Celkem s DPH: 4 615,24\nZaokrouhlení: -0,24\nCelkem k úhradě: 4 615,00 Kč")
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not LLMS["qwen3.5-4b"].exists(), reason="model not downloaded")
+def test_llm_follows_label_conventions():
+    run, _ = load_extractor("qwen3.5-4b")
+    (inv,) = run(ROUNDED)
+    assert inv["duzp"] == "2026-07-31"  # DUZP, not splatnost
+    assert inv["total"] == 4615.24 and inv["to_pay"] == 4615.0  # total before rounding
+    (rec,) = run(RECEIPT)
+    assert rec["duzp"] == rec["issue_date"] == "2026-09-15"  # receipts: DUZP = issue date
