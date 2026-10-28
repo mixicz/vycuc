@@ -1,0 +1,7 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+pypdfium2==5.14.0
+torch==2.14.1+cpu
+torchvision==0.29.1+cpu
+python-doctr==1.1.0
+easyocr==1.7.2
+pytest==9.2.0
