@@ -1,6 +1,6 @@
 # Extraction PoC — design
 
-Date: 2026-10-28 · Status: approved in chat, awaiting spec review
+Date: 2026-10-28 · Status: approved
 
 ## Goal
 
@@ -59,7 +59,8 @@ Three stages, measured separately so that a weak OCR cannot hide a good extracto
 - **(b) Small LLM on CPU:** llama.cpp with a quantised instruct model (e.g. Qwen3 1.7B and 4B, Q4),
   prompted with the page text and a JSON schema. RAM measured, expected to exceed 2 GB.
 - **(c) Reference, not a production candidate:** a larger vision-language model on the user's GPU
-  reading page images directly — shows the achievable ceiling.
+  reading page images directly — shows the achievable ceiling. Must fit in **≤ 21 GB VRAM total**
+  (weights + KV cache + context + runtime overhead), measured as peak VRAM during the run.
 
 ### Stage 3 — checks (no AI, applied to every variant)
 
@@ -81,7 +82,7 @@ Per document and aggregated per engine/extractor combination:
 | Auto-pass rate | Share of documents with all key fields correct **and** no check failure. |
 | Silent errors | Documents with a wrong key field that still passed all checks — the number that must be ~0. |
 | Time | Wall-clock seconds per page, single core (`taskset -c 0`, `OMP_NUM_THREADS=1`), plus cold-start (model load) time. |
-| Memory | Peak RSS per engine process (`resource.getrusage(RUSAGE_CHILDREN)`), model size on disk. |
+| Memory | Peak RSS per engine process (`resource.getrusage(RUSAGE_CHILDREN)`), model size on disk; for the GPU reference also peak VRAM (`nvidia-smi`). |
 
 Key fields: `type`, `number`, `variabilni_symbol`, `issue_date`, `duzp`, `due_date`,
 `supplier.ico`, `vat[]`, `total`.
