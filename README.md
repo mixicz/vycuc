@@ -1,0 +1,2 @@
+# vycuc
+Výcuc – vyčítání účtenek
