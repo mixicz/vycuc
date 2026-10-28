@@ -1,0 +1,46 @@
+from poc.score import evaluate, ocr_recall, same
+
+WANT = {"type": "receivedInvoice", "payment": "transfer", "number": "20269001",
+        "variabilni_symbol": None, "issue_date": "2026-07-31", "duzp": "2026-07-31",
+        "due_date": "2026-08-14", "currency": "CZK",
+        "supplier": {"name": "Kavárna Vzor s.r.o.", "ico": "12345679", "dic": "CZ12345679"},
+        "vat": [{"rate": 12, "base": 4120.75, "vat": 494.49}], "total": 4615.24,
+        "to_pay": 4615.24, "items": [{"text": "koule", "base": 2000.00, "total": None}]}
+LABELS = {"file": "ZA001.pdf", "documents": [WANT]}
+ARES = {"obchodniJmeno": "Kavárna Vzor s.r.o.", "dic": "CZ12345679", "sidlo": {}}
+lookup = lambda ico: ARES if ico == "12345679" else None
+
+
+def test_same_null_semantics():
+    assert same("variabilni_symbol", None, None)
+    assert not same("variabilni_symbol", "123", None)
+    assert not same("number", None, "20269001")
+    assert same("number", "2026 9001", "20269001")
+    assert same("total", "4615.24", 4615.24) and not same("total", 4615.0, 4615.24)
+    assert same("supplier.name", "Kavarna vzor s. r. o.", "Kavárna Vzor s.r.o.")
+    assert same("vat", [{"rate": 12.0, "base": 4120.75, "vat": 494.49}], WANT["vat"])
+    assert not same("vat", [], WANT["vat"]) and not same("vat", [{"rate": None}], WANT["vat"])
+
+
+def test_evaluate_pass_silent_error():
+    good = {k: v for k, v in WANT.items() if k != "supplier"} | {"supplier": {"ico": "12345679"}}
+    row = evaluate({"documents": [good]}, LABELS, lookup)
+    assert row["pass"] and not row["silent"] and row["supplier.name"]  # name filled from ARES
+
+    wrong_date = good | {"due_date": "2026-08-15"}  # checks can't see this
+    row = evaluate({"documents": [wrong_date]}, LABELS, lookup)
+    assert row["silent"] and not row["pass"]
+
+    caught = good | {"total": 999.0}  # VAT sum check catches it
+    row = evaluate({"documents": [caught]}, LABELS, lookup)
+    assert not row["pass"] and not row["silent"] and "vat sum != total" in row["fails"]
+
+    row = evaluate({"error": "bad model output"}, LABELS, lookup)
+    assert row["error"] and not row["pass"] and not row["silent"]
+
+
+def test_ocr_recall():
+    text = "Faktura 2026 9001 IČO 12345679 vystaveno 31.7.2026 splatnost 14. 8. 2026\n" \
+           "12 % 4 120,75 494,49 Celkem 4 615,24"
+    assert ocr_recall(text, WANT) == (7, 7)
+    assert ocr_recall("nothing", WANT) == (0, 7)
