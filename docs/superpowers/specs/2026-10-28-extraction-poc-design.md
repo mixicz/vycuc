@@ -82,7 +82,7 @@ Per document and aggregated per engine/extractor combination:
 | Auto-pass rate | Share of documents with all key fields correct **and** no check failure. |
 | Silent errors | Documents with a wrong key field that still passed all checks — the number that must be ~0. |
 | Time | Wall-clock seconds per page, single core (`taskset -c 0`, `OMP_NUM_THREADS=1`), plus cold-start (model load) time. |
-| Memory | Peak RSS per engine process (`resource.getrusage(RUSAGE_CHILDREN)`), model size on disk; for the GPU reference also peak VRAM (`nvidia-smi`). |
+| Memory | Peak RSS per engine process (`os.wait4` rusage of that child), model size on disk; for the GPU reference also peak VRAM (amdgpu sysfs `mem_info_vram_used`, RX 7900 XTX). |
 
 Key fields: `type`, `number`, `variabilni_symbol`, `issue_date`, `duzp`, `due_date`,
 `supplier.ico`, `vat[]`, `total`.
