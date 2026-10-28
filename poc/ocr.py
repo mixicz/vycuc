@@ -19,8 +19,10 @@ def text_layer(pdf: Path) -> list[str]:
     return [page.get_textpage().get_text_bounded() for page in pdfium.PdfDocument(pdf)]
 
 
-def render(pdf: Path, dpi: int = DPI) -> list:
-    return [p.render(scale=dpi / 72).to_pil().convert("RGB") for p in pdfium.PdfDocument(pdf)]
+def render(pdf: Path, dpi: int = DPI):
+    """Yield pages one at a time, so peak RSS reflects the engine, not the page count."""
+    for p in pdfium.PdfDocument(pdf):
+        yield p.render(scale=dpi / 72).to_pil().convert("RGB")
 
 
 def has_text(s: str) -> bool:

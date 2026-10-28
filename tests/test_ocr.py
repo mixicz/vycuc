@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageDraw, ImageFont
 
-from poc.ocr import ENGINES, has_text, join_boxes, text_layer
+from poc.ocr import ENGINES, has_text, join_boxes, render, text_layer
 
 ROOT = Path(__file__).resolve().parent.parent
 ZA001 = ROOT / "testdata" / "zari" / "ZA001.pdf"
@@ -61,3 +61,11 @@ def test_cli_records_error_and_continues(tmp_path):
     if ZA001.exists():
         assert json.loads((out / "ZA001.pdf.json").read_text())["pages"]
     assert json.loads((out / "_meta.json").read_text())["engine"] == "layer"
+
+
+@pytest.mark.skipif(not ZA001.exists(), reason="testdata missing")
+def test_render_is_lazy():
+    # all pages at 300 DPI held at once would inflate every engine's measured RSS
+    pages = render(ZA001)
+    assert not isinstance(pages, list)
+    assert next(iter(pages)).size[0] > 2000
