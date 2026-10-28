@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageDraw, ImageFont
 
-from poc.ocr import ENGINES, has_text, join_boxes, render, text_layer
+from poc.ocr import ENGINES, MAX_PIXELS, has_text, join_boxes, render, text_layer
 
 ROOT = Path(__file__).resolve().parent.parent
 ZA001 = ROOT / "testdata" / "zari" / "ZA001.pdf"
@@ -69,3 +69,12 @@ def test_render_is_lazy():
     pages = render(ZA001)
     assert not isinstance(pages, list)
     assert next(iter(pages)).size[0] > 2000
+
+
+@pytest.mark.skipif(not (ZA001.parent / "ZA003.pdf").exists(), reason="testdata missing")
+def test_render_caps_oversized_pages_at_a4_300dpi_area():
+    # ZA003 is a 1176x6626 pt phone screenshot; 300 DPI would upscale it 4x to 390 MB
+    (page,) = render(ZA001.parent / "ZA003.pdf")
+    assert page.size[0] * page.size[1] <= MAX_PIXELS * 1.01  # pdfium rounds dims up
+    a4 = next(iter(render(ZA001)))
+    assert a4.size[0] > 2400  # normal A4 pages keep full 300 DPI

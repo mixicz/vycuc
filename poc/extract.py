@@ -188,25 +188,30 @@ def _ollama(path: str, body: dict, timeout: float = 900) -> dict:
         return json.load(r)
 
 
-def vram_sampler():
-    """Sample dGPU VRAM use every 0.2 s; returns stop() -> {"peak_vram_bytes": peak - baseline}."""
+def vram_sampler(model: str):
+    """Sample ollama's VRAM allocation for `model` (weights + KV cache + context) every 0.2 s.
+
+    Card-level sysfs counters are useless here: the desktop shares the GPU and ollama's
+    runner runs as another user, so its per-process fdinfo is unreadable.
+    """
     import threading
-    used = next((d / "mem_info_vram_used" for d in Path("/sys/class/drm").glob("card*/device")
-                 if (d / "mem_info_vram_total").exists()
-                 and int((d / "mem_info_vram_total").read_text()) > 16 * 2**30), None)
-    read = (lambda: int(used.read_text())) if used else (lambda: 0)
-    base, peak, done = read(), [0], threading.Event()
+    import urllib.request
+
+    def read() -> int:
+        with urllib.request.urlopen(OLLAMA + "/api/ps", timeout=10) as r:
+            return next((m["size_vram"] for m in json.load(r)["models"] if m["name"] == model), 0)
+    peak, done = [read()], threading.Event()
 
     def loop():
         while not done.wait(0.2):
-            peak[0] = max(peak[0], read() - base)
+            peak[0] = max(peak[0], read())
     th = threading.Thread(target=loop, daemon=True)
     th.start()
 
     def stop():
         done.set()
         th.join()
-        return {"peak_vram_bytes": max(peak[0], read() - base, 0)}
+        return {"peak_vram_bytes": max(peak[0], read())}
     return stop
 
 
@@ -216,14 +221,8 @@ def _load_vlm(model: str):
 
     from poc.ocr import render
     import urllib.request
-    _ollama("/api/generate", {"model": model, "keep_alive": 0})  # unload -> clean baseline
-    for _ in range(60):  # unload is async: VRAM is freed only after the runner exits
-        with urllib.request.urlopen(OLLAMA + "/api/ps", timeout=10) as r:
-            if not json.load(r)["models"]:
-                break
-        time.sleep(0.5)
-    time.sleep(1)
-    stop = vram_sampler()
+    _ollama("/api/generate", {"model": model, "keep_alive": 0})  # unload -> cold start
+    stop = vram_sampler(model)
 
     def png(img) -> str:
         buf = io.BytesIO()

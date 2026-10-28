@@ -116,9 +116,9 @@ def test_llm_reads_invoice():
     assert meta["model_bytes"] > 1e9
 
 
-def test_vram_sampler_reports_peak():
-    stop = vram_sampler()
-    assert stop()["peak_vram_bytes"] >= 0
+def test_vram_sampler_reports_zero_for_unloaded_model():
+    stop = vram_sampler("no-such-model:latest")
+    assert stop()["peak_vram_bytes"] == 0
 
 
 def _ollama_up():
@@ -148,3 +148,15 @@ def test_vlm_baseline_excludes_already_loaded_model():
     run, meta = load_extractor("vlm:qwen3.8:27b-q4_K_M")
     run(ROOT / "testdata/zari/ZA001.pdf")
     assert meta["finish"]()["peak_vram_bytes"] > 10 * 2**30
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not _ollama_up(), reason="needs ollama")
+def test_vram_sampler_counts_only_the_model_not_the_desktop():
+    # the card is shared with the desktop; only ollama's own allocation for the model counts
+    from poc.extract import _ollama
+    model = "qwen3.8:27b-q4_K_M"
+    _ollama("/api/generate", {"model": model, "keep_alive": "1m"})
+    with urllib.request.urlopen("http://localhost:11434/api/ps") as r:
+        expected = next(m["size_vram"] for m in json.load(r)["models"] if m["name"] == model)
+    assert vram_sampler(model)()["peak_vram_bytes"] == expected

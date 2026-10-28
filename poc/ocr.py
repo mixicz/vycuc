@@ -12,6 +12,7 @@ from pathlib import Path
 import pypdfium2 as pdfium
 
 DPI = 300
+MAX_PIXELS = 2480 * 3508  # A4 at 300 DPI; photo-PDFs with huge pages are scaled down to this
 MODELS = Path(__file__).parent / "models"
 
 
@@ -22,7 +23,9 @@ def text_layer(pdf: Path) -> list[str]:
 def render(pdf: Path, dpi: int = DPI):
     """Yield pages one at a time, so peak RSS reflects the engine, not the page count."""
     for p in pdfium.PdfDocument(pdf):
-        yield p.render(scale=dpi / 72).to_pil().convert("RGB")
+        w, h = p.get_size()
+        scale = min(dpi / 72, (MAX_PIXELS / (w * h)) ** 0.5)
+        yield p.render(scale=scale).to_pil().convert("RGB")
 
 
 def has_text(s: str) -> bool:
