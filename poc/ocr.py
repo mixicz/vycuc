@@ -69,7 +69,7 @@ def _rapidocr():
 def _paddleocr():
     import numpy as np
     from paddleocr import PaddleOCR
-    eng = PaddleOCR(lang="cs")
+    eng = PaddleOCR(lang="cs", enable_mkldnn=False)  # oneDNN path crashes in paddle 3.3.1 (PIR attr)
 
     def run(img):
         (r,) = eng.predict(np.array(img)[:, :, ::-1])  # RGB -> BGR
