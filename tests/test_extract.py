@@ -1,11 +1,12 @@
 import json
 import subprocess
 import sys
+import urllib.request
 from pathlib import Path
 
 import pytest
 
-from poc.extract import LLMS, SCHEMA, load_extractor, page_texts, parse_documents, rules
+from poc.extract import LLMS, SCHEMA, VRAM_LIMIT, load_extractor, page_texts, parse_documents, rules, vram_sampler
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -113,3 +114,37 @@ def test_llm_reads_invoice():
     (d,) = run(INVOICE)
     assert d["supplier"]["ico"] == "12345679" and abs(d["total"] - 4615.24) < 0.01
     assert meta["model_bytes"] > 1e9
+
+
+def test_vram_sampler_reports_peak():
+    stop = vram_sampler()
+    assert stop()["peak_vram_bytes"] >= 0
+
+
+def _ollama_up():
+    try:
+        urllib.request.urlopen("http://localhost:11434/api/version", timeout=2)
+        return True
+    except OSError:
+        return False
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not (_ollama_up() and (ROOT / "testdata/zari/ZA001.pdf").exists()),
+                    reason="needs ollama and testdata")
+def test_vlm_reads_invoice_within_vram_limit():
+    run, meta = load_extractor("vlm:qwen3.8:27b-q4_K_M")
+    (d, *_) = run(ROOT / "testdata/zari/ZA001.pdf")
+    assert d["supplier"]["ico"] == "12345679"
+    assert 10 * 2**30 < meta["finish"]()["peak_vram_bytes"] <= VRAM_LIMIT
+
+
+@pytest.mark.slow
+@pytest.mark.skipif(not (_ollama_up() and (ROOT / "testdata/zari/ZA001.pdf").exists()),
+                    reason="needs ollama and testdata")
+def test_vlm_baseline_excludes_already_loaded_model():
+    from poc.extract import _ollama
+    _ollama("/api/generate", {"model": "qwen3.8:27b-q4_K_M", "keep_alive": "5m"})  # preload
+    run, meta = load_extractor("vlm:qwen3.8:27b-q4_K_M")
+    run(ROOT / "testdata/zari/ZA001.pdf")
+    assert meta["finish"]()["peak_vram_bytes"] > 10 * 2**30

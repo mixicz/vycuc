@@ -174,6 +174,77 @@ def _load_llm(path: Path):
     return run
 
 
+OLLAMA = "http://localhost:11434"
+VLM_DPI = 150  # ponytail: 300 DPI pages blow the image-token budget; raise if small print is misread
+VLM_CTX = 16384
+VRAM_LIMIT = 21 * 2**30  # user's cap for the GPU reference, all overhead included
+
+
+def _ollama(path: str, body: dict, timeout: float = 900) -> dict:
+    import urllib.request
+    req = urllib.request.Request(OLLAMA + path, json.dumps(body).encode(),
+                                 {"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return json.load(r)
+
+
+def vram_sampler():
+    """Sample dGPU VRAM use every 0.2 s; returns stop() -> {"peak_vram_bytes": peak - baseline}."""
+    import threading
+    used = next((d / "mem_info_vram_used" for d in Path("/sys/class/drm").glob("card*/device")
+                 if (d / "mem_info_vram_total").exists()
+                 and int((d / "mem_info_vram_total").read_text()) > 16 * 2**30), None)
+    read = (lambda: int(used.read_text())) if used else (lambda: 0)
+    base, peak, done = read(), [0], threading.Event()
+
+    def loop():
+        while not done.wait(0.2):
+            peak[0] = max(peak[0], read() - base)
+    th = threading.Thread(target=loop, daemon=True)
+    th.start()
+
+    def stop():
+        done.set()
+        th.join()
+        return {"peak_vram_bytes": max(peak[0], read() - base, 0)}
+    return stop
+
+
+def _load_vlm(model: str):
+    import base64
+    import io
+
+    from poc.ocr import render
+    import urllib.request
+    _ollama("/api/generate", {"model": model, "keep_alive": 0})  # unload -> clean baseline
+    for _ in range(60):  # unload is async: VRAM is freed only after the runner exits
+        with urllib.request.urlopen(OLLAMA + "/api/ps", timeout=10) as r:
+            if not json.load(r)["models"]:
+                break
+        time.sleep(0.5)
+    time.sleep(1)
+    stop = vram_sampler()
+
+    def png(img) -> str:
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        return base64.b64encode(buf.getvalue()).decode()
+
+    def run(pdf: Path) -> list[dict]:
+        r = _ollama("/api/chat", {
+            "model": model, "stream": False, "think": False, "format": SCHEMA,
+            "options": {"temperature": 0, "num_ctx": VLM_CTX},
+            "messages": [{"role": "system", "content": PROMPT},
+                         {"role": "user", "content": "Extract the documents from these pages.",
+                          "images": [png(i) for i in render(pdf, VLM_DPI)]}]})
+        return parse_documents(r["message"]["content"])
+
+    import urllib.request
+    with urllib.request.urlopen(OLLAMA + "/api/tags", timeout=10) as t:  # GET
+        size = next((m["size"] for m in json.load(t)["models"] if m["name"] == model), 0)
+    return run, {"finish": stop, "model_bytes": size}
+
+
 # --- CLI -----------------------------------------------------------------------
 
 
@@ -226,6 +297,8 @@ def main(extractor: str, out_dir: str, sources: list[str]) -> None:
 
 def load_extractor(name: str):
     """-> (fn(input) -> list[dict], meta dict). meta may hold 'finish': () -> dict."""
+    if name.startswith("vlm:"):
+        return _load_vlm(name[4:])
     if name in LLMS:
         return _load_llm(LLMS[name]), {"model_bytes": LLMS[name].stat().st_size}
     return LOADERS[name](), {}
