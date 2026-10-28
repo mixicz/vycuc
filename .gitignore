@@ -1,1 +1,7 @@
 testdata/
+.venv*/
+__pycache__/
+poc/cache/
+poc/results/
+poc/models/
+.superpowers/
