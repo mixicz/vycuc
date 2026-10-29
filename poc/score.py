@@ -27,7 +27,8 @@ def get(doc, path: str):
 
 
 def _vat(lines) -> list[tuple[float, float, float]]:
-    return sorted((float(v["rate"]), float(v["base"]), float(v["vat"])) for v in lines)
+    rows = ((float(v["rate"]), float(v["base"]), float(v["vat"])) for v in lines)
+    return sorted(r for r in rows if r[1] or r[2])  # an all-zero line carries no information
 
 
 def same(field: str, got, want) -> bool:
@@ -66,7 +67,8 @@ def evaluate(result: dict, labels: dict, lookup=ares) -> dict:
             "key_ok": False, "pass": False, "silent": False, "fails": result.get("error", "no output"),
             "items_count_ok": False, "items_found": 0.0}
     got, fails = check(docs[0], lookup)
-    scored = [{f: same(f, get(got, f), get(w, f)) for f in KEY + EXTRA} for w in wants]
+    duzp = lambda d: d | {"duzp": d.get("duzp") or d.get("issue_date")}  # export fills it the same way
+    scored = [{f: same(f, get(duzp(got), f), get(duzp(w), f)) for f in KEY + EXTRA} for w in wants]
     i = max(range(len(wants)), key=lambda j: sum(scored[j][f] for f in KEY))
     s = scored[i]
     key_ok = all(s[f] for f in KEY)

@@ -44,3 +44,17 @@ def test_ocr_recall():
            "12 % 4 120,75 494,49 Celkem 4 615,24"
     assert ocr_recall(text, WANT) == (7, 7)
     assert ocr_recall("nothing", WANT) == (0, 7)
+
+
+def test_zero_vat_line_is_no_information():
+    assert same("vat", WANT["vat"] + [{"rate": 0, "base": 0.0, "vat": 0.0}], WANT["vat"])
+    assert not same("vat", [{"rate": 0, "base": 8.1, "vat": 0.0}], [])  # non-zero base still counts
+
+
+def test_missing_duzp_equals_issue_date():
+    # export fills a missing DUZP with the issue date, so both spellings mean the same
+    good = {k: v for k, v in WANT.items() if k != "supplier"} | {"supplier": {"ico": "12345679"}}
+    no_duzp = {"documents": [WANT | {"duzp": None}]}
+    assert evaluate({"documents": [good]}, no_duzp, lookup)["duzp"]
+    assert evaluate({"documents": [good | {"duzp": None}]}, LABELS, lookup)["duzp"]
+    assert not evaluate({"documents": [good | {"duzp": "2026-08-14"}]}, no_duzp, lookup)["duzp"]
