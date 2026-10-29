@@ -4,7 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Greenfield: no code, stack, or build/test commands yet. Update this file with commands and architecture once they exist.
+Extraction PoC (branch `poc-extraction`): a benchmark harness in `poc/`, no app yet. Results and findings
+are in `docs/poc-results.md`. Spec: `docs/superpowers/specs/2026-10-28-extraction-poc-design.md`.
+
+## Commands
+
+Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR, llama.cpp),
+`.venv-paddle` (PaddleOCR), `.venv-torch` (docTR, EasyOCR). Requirements are in `poc/requirements*.txt`.
+
+```
+.venv/bin/python -m pytest -m 'not slow'          # fast tests
+.venv/bin/python -m pytest tests/test_score.py::test_name   # one test
+.venv/bin/python -m pytest -m slow                # needs models in poc/models, ollama, testdata
+.venv/bin/python -m poc.bench RUN ocr|extract|vlm [--cpus 0]   # results in poc/results/RUN
+.venv/bin/python -m poc.score RUN [--report docs/poc-results.md]
+```
+
+- Pipeline: `poc/ocr.py` (text per page) → `poc/extract.py` (rules / llama.cpp / ollama VLM) →
+  `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
+- Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code,
+  so delete the cache after changing either.
+- `testdata/`, `poc/cache/`, `poc/results/`, `poc/models/` hold client data or large files and are never
+  committed. `docs/poc-results.md` may contain only field names, file IDs and numbers.
 
 ## Language conventions
 
