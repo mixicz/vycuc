@@ -14,7 +14,9 @@ from poc.checks import ico_valid
 from poc.norm import amounts_in, dates_in, fold
 from poc.ocr import MODELS, has_text
 
-CLIENT_ICO = "76543218"  # Klient Vzor s.r.o.; production gets this per company
+# the test set's client, kept out of git like the documents; production gets this per company
+_client = Path(__file__).parent.parent / "testdata" / "client_ico"
+CLIENT_ICO = _client.read_text().strip() if _client.exists() else None
 CACHE = Path(__file__).parent / "cache" / "extract"
 
 # --- (a) rules -----------------------------------------------------------------
