@@ -4,82 +4,91 @@
 
 ## OCR
 
-| engine | value recall native | value recall scans | s/page (median) | load s | peak RSS MB | model MB |
-|---|---|---|---|---|---|---|
-| doctr | 99% | 93% | 6.00 | 3.2 | 1561 | 123 |
-| easyocr | 94% | 68% | 28.76 | 2.3 | 4400 | 93 |
-| layer | 99% | 0% | 0.00 | 0.0 | 27 | 0 |
-| paddleocr | 99% | 94% | 82.12 | 1.3 | 7203 | 176 |
-| rapidocr | 99% | 94% | 2.45 | 0.3 | 908 | 30 |
-| tesseract | 97% | 71% | 1.06 | 0.1 | 372 | 15 |
+| engine | value recall native | value recall scans | s/page (median) | load s | peak RSS MB | model MB | file errors | exit |
+|---|---|---|---|---|---|---|---|---|
+| doctr | 99% | 93% | 6.00 | 3.2 | 1561 | 123 | 0 | 0 |
+| easyocr | 94% | 68% | 28.76 | 2.3 | 4400 | 93 | 0 | 0 |
+| layer | 99% | 0% | 0.00 | 0.0 | 27 | 0 | 0 | 0 |
+| paddleocr | 99% | 94% | 82.12 | 1.3 | 7203 | 176 | 0 | 0 |
+| rapidocr | 99% | 94% | 2.28 | 0.3 | 900 | 30 | 0 | 0 |
+| tesseract | 97% | 71% | 1.06 | 0.1 | 372 | 15 | 0 | 0 |
 
 ## Extraction
 
 | combo | auto-pass native | auto-pass scans | silent native | silent scans | errors | s/doc (median) | load s | peak RSS MB | VRAM MB |
 |---|---|---|---|---|---|---|---|---|---|
-| qwen3.5-2b+doctr | 4/40 | 0/27 | 10/40 | 6/27 | 0 | 56.7 | 0.6 | 2249 |  |
-| qwen3.5-2b+rapidocr | 4/40 | 0/27 | 10/40 | 13/27 | 0 | 56.2 | 0.6 | 2310 |  |
-| qwen3.5-4b+doctr | 7/40 | 2/27 | 11/40 | 9/27 | 1 | 104.7 | 0.8 | 4775 |  |
-| qwen3.5-4b+rapidocr | 7/40 | 2/27 | 11/40 | 12/27 | 1 | 107.5 | 1.0 | 4791 |  |
-| rules+doctr | 2/40 | 0/27 | 12/40 | 1/27 | 0 | 0.0 | 0.0 | 26 |  |
-| rules+easyocr | 2/40 | 0/27 | 12/40 | 7/27 | 0 | 0.0 | 0.0 | 26 |  |
-| rules+layer | 2/40 | 0/27 | 12/40 | 0/27 | 0 | 0.0 | 0.0 | 25 |  |
-| rules+paddleocr | 2/40 | 2/27 | 12/40 | 9/27 | 0 | 0.0 | 0.0 | 26 |  |
-| rules+rapidocr | 2/40 | 1/27 | 12/40 | 9/27 | 0 | 0.0 | 0.0 | 26 |  |
-| rules+tesseract | 2/40 | 0/27 | 12/40 | 7/27 | 0 | 0.0 | 0.0 | 26 |  |
-| vlm_qwen3.8_27b-q4_K_M | 18/40 | 17/27 | 9/40 | 4/27 | 0 | 24.4 | 0.1 | 173 | 16190 |
+| qwen3.5-2b+doctr | 3/40 | 0/27 | 9/40 | 6/27 | 0 | 49.4 | 0.5 | 2248 |  |
+| qwen3.5-2b+rapidocr | 3/40 | 0/27 | 9/40 | 8/27 | 0 | 46.7 | 0.5 | 2290 |  |
+| qwen3.5-4b+doctr | 6/40 | 3/27 | 9/40 | 8/27 | 1 | 107.8 | 0.9 | 4757 |  |
+| qwen3.5-4b+rapidocr | 6/40 | 1/27 | 9/40 | 11/27 | 1 | 107.9 | 0.9 | 4787 |  |
+| rules+doctr | 2/40 | 0/27 | 5/40 | 0/27 | 0 | 0.0 | 0.0 | 26 |  |
+| rules+easyocr | 2/40 | 0/27 | 5/40 | 1/27 | 0 | 0.0 | 0.0 | 26 |  |
+| rules+layer | 2/40 | 0/27 | 5/40 | 0/27 | 0 | 0.0 | 0.0 | 26 |  |
+| rules+paddleocr | 2/40 | 2/27 | 5/40 | 1/27 | 0 | 0.0 | 0.0 | 26 |  |
+| rules+rapidocr | 2/40 | 1/27 | 5/40 | 1/27 | 0 | 0.0 | 0.0 | 26 |  |
+| rules+tesseract | 2/40 | 0/27 | 5/40 | 2/27 | 0 | 0.0 | 0.0 | 26 |  |
+| vlm_qwen3.8_27b-q4_K_M | 19/40 | 16/27 | 8/40 | 4/27 | 0 | 24.7 | 0.0 | 173 | 16190 |
 
 ## Field accuracy (all files)
 
 | combo | type | number | variabilni_symbol | issue_date | duzp | due_date | supplier.ico | vat | total | payment | currency | supplier.dic | supplier.name | to_pay | items_count_ok |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| qwen3.5-2b+doctr | 63% | 72% | 52% | 49% | 49% | 75% | 82% | 48% | 67% | 52% | 84% | 69% | 73% | 64% | 46% |
-| qwen3.5-2b+rapidocr | 61% | 78% | 52% | 51% | 51% | 72% | 88% | 51% | 67% | 54% | 87% | 79% | 79% | 69% | 49% |
-| qwen3.5-4b+doctr | 84% | 79% | 57% | 96% | 93% | 97% | 85% | 72% | 94% | 85% | 99% | 79% | 87% | 88% | 75% |
-| qwen3.5-4b+rapidocr | 85% | 79% | 61% | 94% | 91% | 96% | 88% | 72% | 91% | 87% | 99% | 81% | 85% | 87% | 76% |
+| qwen3.5-2b+doctr | 58% | 70% | 51% | 43% | 43% | 70% | 79% | 48% | 67% | 52% | 78% | 69% | 72% | 66% | 54% |
+| qwen3.5-2b+rapidocr | 58% | 73% | 51% | 48% | 48% | 69% | 85% | 45% | 69% | 54% | 90% | 79% | 79% | 72% | 51% |
+| qwen3.5-4b+doctr | 85% | 78% | 54% | 96% | 93% | 97% | 85% | 69% | 94% | 87% | 99% | 79% | 82% | 90% | 79% |
+| qwen3.5-4b+rapidocr | 85% | 82% | 58% | 96% | 93% | 97% | 88% | 70% | 90% | 88% | 99% | 79% | 84% | 88% | 79% |
 | rules+doctr | 88% | 58% | 70% | 93% | 88% | 82% | 79% | 16% | 31% | 75% | 90% | 79% | 72% | 37% | 0% |
 | rules+easyocr | 88% | 60% | 70% | 87% | 82% | 85% | 72% | 18% | 45% | 70% | 87% | 70% | 64% | 49% | 0% |
 | rules+layer | 84% | 51% | 67% | 54% | 49% | 82% | 52% | 16% | 31% | 48% | 94% | 52% | 46% | 37% | 0% |
 | rules+paddleocr | 88% | 64% | 72% | 91% | 87% | 88% | 84% | 33% | 49% | 76% | 88% | 82% | 75% | 58% | 0% |
 | rules+rapidocr | 88% | 64% | 72% | 91% | 87% | 88% | 82% | 33% | 49% | 76% | 91% | 84% | 73% | 57% | 0% |
 | rules+tesseract | 88% | 61% | 72% | 85% | 81% | 88% | 72% | 25% | 40% | 75% | 90% | 72% | 66% | 46% | 0% |
-| vlm_qwen3.8_27b-q4_K_M | 99% | 87% | 91% | 94% | 94% | 91% | 97% | 91% | 91% | 93% | 100% | 94% | 94% | 93% | 81% |
+| vlm_qwen3.8_27b-q4_K_M | 99% | 87% | 91% | 94% | 94% | 91% | 97% | 90% | 94% | 93% | 100% | 94% | 94% | 96% | 84% |
 
 ## Findings
 
 Hand-written after run R1 (2026-10-29). The tables above are generated by `poc.score`.
 
 **Decision rule not met by any pipeline.** The target was zero silent errors and an auto-pass rate of
-≥ 90 % native / ≥ 70 % scans. Even the GPU reference reaches 18/40 and 17/27, with 9 + 4 silent
-errors. The best CPU pipeline (Qwen3.5-4B on RapidOCR text) reaches 7/40 and 2/27 and needs
-4.8 GB RAM and ~107 s per document on one core. That is outside the hosting budget (1–2 GB RAM) and
-far from the reference.
+≥ 90 % native / ≥ 70 % scans. Even the GPU reference reaches 19/40 and 16/27, with 8 + 4 silent
+errors. The best CPU pipeline (Qwen3.5-4B on RapidOCR or docTR text) reaches 6/40 and 1–3/27 and
+needs 4.8 GB RAM and ~108 s per document (median) on one core. That is outside the hosting budget
+(1–2 GB RAM) and far from the reference.
 
 **OCR is solved: RapidOCR.** It has the best value recall on scans (94 %, tied with PaddleOCR,
-whose PP-OCR models it runs) at 2.5 s/page and 0.9 GB peak RSS on one core, which fits the hosting
+whose PP-OCR models it runs) at 2.3 s/page and 0.9 GB peak RSS on one core, which fits the hosting
 budget. PaddleOCR needs 82 s/page and 7.2 GB for the same text. docTR is a close second (93 %,
 6 s/page, 1.6 GB). Tesseract (71 %) and EasyOCR (68 %) lose too many values on scans.
 
 **Extraction is the bottleneck, and the hard part is the VAT recapitulation and the totals.**
 - Rules: with RapidOCR text they read dates, IČO and type at 82–91 %, but VAT lines at 33 % and
   total at 49 %. They pick item lines instead of the VAT summary and miss rounding.
-- Small CPU LLMs: the 2B is not usable (VAT 51 %, type 61 %). The 4B gets dates and totals at
-  91–96 % but still fails the VAT summary (72 %: duplicated lines, item lines, rate-0 lines whose
-  base is a VAT amount) and the variabilní symbol (61 %, often the client's IČO). One 4B output was
-  truncated JSON (ZAH01).
-- GPU reference (Qwen3.8 27B, page images): 91 % on VAT lines and total, 16.2 GB VRAM (cap 21 GB),
-  24 s/document. Its remaining silent errors are reading errors in strings the text layer has
-  exactly: a letter dropped or swapped in document numbers (ZA013, ZA014, ZA022), day and month
-  swapped (ZA024), wrong year (ZA051), and invented VAT amounts (ZA052).
+- Small CPU LLMs: the 2B is not usable (VAT 45–48 %, type 58 %, issue date 43–48 %). The 4B gets
+  dates and totals at 90–97 % but still fails the VAT summary (69–70 %: duplicated lines, item
+  lines, rate-0 lines whose base is a VAT amount) and the variabilní symbol (54–58 %, often the
+  client's IČO). One 4B output per source was truncated JSON.
+- GPU reference (Qwen3.8 27B, page images): 90 % on VAT lines, 94 % on total, 16.2 GB VRAM
+  (cap 21 GB), 25 s/document. Of its 12 silent errors, 9 are reading errors in strings the text
+  layer has exactly: document number (6 files), VS (1), dates (2: day/month swap, wrong year). The
+  rest are invented VAT lines (2) and one credit note typed as an invoice.
 
-**The checks work.** Most wrong documents fail a check, mainly the VAT-sum check, and land in
-review. Silent errors come from fields no check covers: document number, VS, dates, type.
+**The checks catch most wrong documents.** A silent error is a wrong key field with every check
+passing. Rules are wrong on 38/40 native documents, but only 5 of them are silent; the rest fail a
+check, mainly the VAT-sum check and the new "VAT payer without VAT lines" check, which cut rules'
+silent native errors from 12 to 5. Silent errors come from fields no check covers: document number,
+VS, dates, type.
 
 **Measurement notes.**
+- Each run is pinned to its cores. `runs.csv` has a `cpu_s` column (user + system time); `cpu_s` well
+  above `wall_s` × cores means threads escaped the pinning. The first R1 run had two such leaks:
+  llama.cpp's prompt-processing threads (`n_threads_batch`) and ONNX Runtime's pool in RapidOCR. Both
+  are fixed and RapidOCR and the LLMs were rerun on one core. The 2B got ~17 % faster per document
+  after the fix; the 4B median did not change (~108 s).
 - Pages are rendered at 300 DPI but capped at the pixel area of A4 at 300 DPI. Some photo-PDFs have
-  page boxes several times A4, and an uncapped render inflated Tesseract's RSS to 2.9 GB.
-- Peak VRAM is ollama's own allocation for the model (`/api/ps` `size_vram`: weights, KV cache,
-  context). The card is shared with the desktop, so card-level counters are not usable.
+  page boxes several times A4, and an uncapped render inflated Tesseract's RSS to 2.9 GB. OCR s/page
+  excludes rasterisation.
+- VRAM is ollama's allocation for the model (`/api/ps` `size_vram`: weights, KV cache, context), not
+  a measured peak. The card is shared with the desktop, so card-level counters are not usable.
 - Scoring treats a missing DUZP as equal to the issue date, because export will fill it that way.
   It also ignores VAT lines whose base and VAT are both 0. The DUZP convention is an open question
   for the accountant.
@@ -95,4 +104,4 @@ review. Silent errors come from fields no check covers: document number, VS, dat
    period and issue ≤ due ≤ issue + 120 days; the number and VS present verbatim in the text; VS ≠
    client IČO.
 4. Decide with the user whether extraction may run on a GPU or a Czech-billed LLM API, which the
-   CPU-only constraint currently excludes. The CPU LLMs do not justify their 2.4–4.8 GB RAM.
+   CPU-only constraint currently excludes. The CPU LLMs do not justify their 2.3–4.8 GB RAM.
