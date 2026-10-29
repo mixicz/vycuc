@@ -116,13 +116,14 @@ def report(run: str) -> str:
            f"{len(labels)} files, {sum(map(_native, labels))} native / "
            f"{sum(not _native(n) for n in labels)} scans. Timing on CPUs per `cpus` column.", "",
            "## OCR", "", "| engine | value recall native | value recall scans | s/page (median) | "
-           "load s | peak RSS MB | model MB |", "|---|---|---|---|---|---|---|"]
+           "load s | peak RSS MB | model MB | file errors | exit |", "|---|---|---|---|---|---|---|---|---|"]
     for e in [d.name for d in sorted(TEXT.iterdir()) if d.is_dir()] if TEXT.exists() else []:
         rec = {True: [0, 0], False: [0, 0]}
-        secs = []
+        secs, errors = [], 0
         for name, lab in labels.items():
             r = _load(TEXT / e / f"{name}.json")
             secs += r.get("seconds", [])
+            errors += "error" in r
             for doc in lab["documents"]:
                 f, t = ocr_recall("\n".join(r.get("pages", [])), doc)
                 rec[_native(name)][0] += f
@@ -131,7 +132,7 @@ def report(run: str) -> str:
         pct = lambda a: f"{a[0] / a[1]:.0%}" if a[1] else "–"
         out.append(f"| {e} | {pct(rec[True])} | {pct(rec[False])} | "
                    f"{statistics.median(secs) if secs else 0:.2f} | {m.get('load_seconds', '')} | "
-                   f"{m.get('peak_rss_mb', '')} | {m.get('model_mb', '')} |")
+                   f"{m.get('peak_rss_mb', '')} | {m.get('model_mb', '')} | {errors} | {m.get('exit', '')} |")
 
     all_rows, per_combo = [], {}
     for d in sorted(p for p in (RESULTS / run).iterdir() if p.is_dir()):

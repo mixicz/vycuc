@@ -166,7 +166,8 @@ def _load_llm(path: Path):
     import os
 
     from llama_cpp import Llama
-    llm = Llama(model_path=str(path), n_ctx=8192, n_threads=len(os.sched_getaffinity(0)), verbose=False)
+    n = len(os.sched_getaffinity(0))  # n_threads_batch defaults to cpu_count(), not the pinned cores
+    llm = Llama(model_path=str(path), n_ctx=8192, n_threads=n, n_threads_batch=n, verbose=False)
 
     def run(text: str) -> list[dict]:
         r = llm.create_chat_completion(
@@ -174,6 +175,7 @@ def _load_llm(path: Path):
             response_format={"type": "json_object", "schema": SCHEMA},
             temperature=0, max_tokens=3000)
         return parse_documents(r["choices"][0]["message"]["content"])
+    run.llm = llm
     return run
 
 
@@ -251,12 +253,17 @@ def _load_vlm(model: str):
 
 
 def page_texts(name: str, sources: list[Path]) -> list[str]:
-    recs = [json.loads(f.read_text()) for s in sources if (f := s / f"{name}.json").exists()]
+    recs = [json.loads(f.read_text()) if (f := s / f"{name}.json").exists() else {"error": f"no {s.name}"}
+            for s in sources]
     pages = [r["pages"] for r in recs if "pages" in r]
+    errors = "; ".join(r["error"] for r in recs if "error" in r)
     if not pages:
-        raise ValueError("; ".join(r.get("error", "no source") for r in recs) or "no source")
-    return [next((p[i] for p in pages if i < len(p) and has_text(p[i])), "")
-            for i in range(max(map(len, pages)))]
+        raise ValueError(errors or "no source")
+    out = [next((p[i] for p in pages if i < len(p) and has_text(p[i])), "")
+           for i in range(max(map(len, pages)))]
+    if errors and not all(map(has_text, out)):  # a scan page whose OCR failed or never ran
+        raise ValueError(errors)
+    return out
 
 
 def main(extractor: str, out_dir: str, sources: list[str]) -> None:

@@ -135,7 +135,8 @@ def _ollama_up():
 def test_vlm_reads_invoice_within_vram_limit():
     run, meta = load_extractor("vlm:qwen3.8:27b-q4_K_M")
     (d, *_) = run(ROOT / "testdata/zari/ZA001.pdf")
-    assert d["supplier"]["ico"] == "12345679"
+    want = json.loads((ROOT / "testdata/zari/ZA001.pdf.expected.json").read_text())["documents"][0]
+    assert d["supplier"]["ico"] == want["supplier"]["ico"]
     assert 10 * 2**30 < meta["finish"]()["peak_vram_bytes"] <= VRAM_LIMIT
 
 
@@ -174,3 +175,26 @@ def test_llm_follows_label_conventions():
     assert inv["total"] == 4615.24 and inv["to_pay"] == 4615.0  # total before rounding
     (rec,) = run(RECEIPT)
     assert rec["duzp"] == rec["issue_date"] == "2026-09-15"  # receipts: DUZP = issue date
+
+
+@pytest.mark.skipif(not LLMS["qwen3.5-2b"].exists(), reason="model not downloaded")
+def test_llm_uses_only_pinned_cores_for_prompt_too():
+    # llama.cpp defaults n_threads_batch to cpu_count(); 32 threads on 1 pinned core ran 6x slower
+    import os
+    run, _ = load_extractor("qwen3.5-2b")
+    n = len(os.sched_getaffinity(0))
+    assert run.llm.context_params.n_threads == run.llm.context_params.n_threads_batch == n
+
+
+def test_page_texts_raises_when_ocr_failed_for_a_scan(tmp_path):
+    layer, ocr = tmp_path / "layer", tmp_path / "ocr"
+    _write(layer, "scan.pdf", {"pages": [""], "seconds": [0]})
+    _write(ocr, "scan.pdf", {"error": "engine crashed"})
+    with pytest.raises(ValueError, match="engine crashed"):
+        page_texts("scan.pdf", [layer, ocr])
+    _write(layer, "lost.pdf", {"pages": [""], "seconds": [0]})  # OCR killed before this file
+    with pytest.raises(ValueError):
+        page_texts("lost.pdf", [layer, ocr])
+    _write(ocr, "blank.pdf", {"pages": [""], "seconds": [1]})  # OCR ran and found nothing: fine
+    _write(layer, "blank.pdf", {"pages": [""], "seconds": [0]})
+    assert page_texts("blank.pdf", [layer, ocr]) == [""]

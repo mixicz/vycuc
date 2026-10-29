@@ -58,3 +58,24 @@ def test_missing_duzp_equals_issue_date():
     assert evaluate({"documents": [good]}, no_duzp, lookup)["duzp"]
     assert evaluate({"documents": [good | {"duzp": None}]}, LABELS, lookup)["duzp"]
     assert not evaluate({"documents": [good | {"duzp": "2026-08-14"}]}, no_duzp, lookup)["duzp"]
+
+
+def test_report_shows_ocr_errors_and_exit(tmp_path, monkeypatch):
+    # a crashed or killed engine must not look like low recall
+    import json
+    from poc import score
+    data, text, results = tmp_path / "data", tmp_path / "text", tmp_path / "results"
+    data.mkdir()
+    (data / "a.pdf").write_text("")
+    (data / "a.pdf.expected.json").write_text(json.dumps(LABELS))
+    (text / "layer").mkdir(parents=True)
+    (text / "layer" / "a.pdf.json").write_text(json.dumps({"pages": [""], "seconds": [0]}))
+    (text / "tesseract").mkdir()
+    (text / "tesseract" / "a.pdf.json").write_text(json.dumps({"error": "boom"}))
+    (results / "R").mkdir(parents=True)
+    (results / "R" / "runs.csv").write_text("stage,name,exit\nocr,tesseract,-9\n")
+    monkeypatch.setattr(score, "TESTDATA", data)
+    monkeypatch.setattr(score, "TEXT", text)
+    monkeypatch.setattr(score, "RESULTS", results)
+    row = next(l for l in score.report("R").splitlines() if l.startswith("| tesseract"))
+    assert "| 1 | -9 |" in row

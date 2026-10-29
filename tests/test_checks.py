@@ -80,6 +80,15 @@ def test_ares_network_error_raises_and_is_not_cached(tmp_path, monkeypatch):
 
 @pytest.mark.slow
 def test_ares_live(tmp_path):
-    assert checks.ares("76543218", tmp_path)["dic"] == "CZ76543218"
+    assert checks.ares("45274649", tmp_path)["dic"] == "CZ45274649"  # ČEZ, a.s.: public, stable
     assert checks.ares("21809789", tmp_path) is None
     assert (tmp_path / "21809789.json").exists()
+
+
+def test_vat_payer_without_vat_lines_fails():
+    # rules+rapidocr R1: every silent VAT error was an empty list on a VAT payer's document
+    _, fails = check(invoice(vat=[]), lookup)  # DIČ comes from ARES
+    assert "missing vat" in fails
+    non_payer = invoice(vat=[], supplier={"ico": "00000001"})
+    _, fails = check(non_payer, lambda ico: {"obchodniJmeno": "Neplátce"})  # no DIČ anywhere
+    assert "missing vat" not in fails

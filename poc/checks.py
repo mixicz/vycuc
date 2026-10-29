@@ -85,6 +85,8 @@ def check(doc: dict, lookup=ares) -> tuple[dict, list[str]]:
         fails.append("missing ico")
 
     vat = doc.get("vat") or []
+    if not vat and (doc.get("total") or 0) > 0 and (sup.get("dic") or "").startswith("CZ"):
+        fails.append("missing vat")  # a CZ DIČ (read or from ARES) means a VAT payer
     if any(None in (v.get("rate"), v.get("base"), v.get("vat")) for v in vat):
         fails.append("vat line incomplete")
     else:

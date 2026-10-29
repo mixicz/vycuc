@@ -20,7 +20,7 @@ VENV = {"layer": ".venv", "tesseract": ".venv", "rapidocr": ".venv", "paddleocr"
         "doctr": ".venv-torch", "easyocr": ".venv-torch"}
 OCR_ENGINES = [e for e in VENV if e != "layer"]
 COLUMNS = ["stage", "name", "cpus", "wall_s", "peak_rss_mb", "exit", "load_seconds", "model_mb",
-           "peak_vram_mb"]
+           "peak_vram_mb", "cpu_s"]
 
 
 def pdfs(d: Path = TESTDATA) -> list[Path]:
@@ -44,7 +44,8 @@ def measure(cmd: list, cpus: set[int]) -> dict:
     _, status, ru = os.wait4(p.pid, 0)  # rusage of this child only
     p.returncode = os.waitstatus_to_exitcode(status)
     return {"wall_s": round(time.perf_counter() - t, 1), "peak_rss_mb": ru.ru_maxrss // 1024,
-            "exit": p.returncode}
+            "exit": p.returncode,
+            "cpu_s": round(ru.ru_utime + ru.ru_stime, 1)}  # > wall_s x cores = threads escaped pinning
 
 
 def _record(run: str, stage: str, name: str, cpus: str, m: dict, meta_file: Path) -> None:

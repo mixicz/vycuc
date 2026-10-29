@@ -38,7 +38,8 @@ def test_has_text():
 
 @pytest.mark.skipif(not ZA001.exists(), reason="testdata missing")
 def test_text_layer_of_native_pdf():
-    assert "12345679" in text_layer(ZA001)[0]
+    ico = json.loads(Path(f"{ZA001}.expected.json").read_text())["documents"][0]["supplier"]["ico"]
+    assert ico in text_layer(ZA001)[0]
 
 
 @pytest.mark.parametrize("engine", MODULE)

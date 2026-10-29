@@ -60,8 +60,12 @@ def _tesseract():
 
 
 def _rapidocr():
+    import os
+
     from rapidocr import RapidOCR
-    eng = RapidOCR()
+    n = len(os.sched_getaffinity(0))  # ORT's default pool pins itself to every core, ignoring ours
+    eng = RapidOCR(params={"EngineConfig.onnxruntime.intra_op_num_threads": n,
+                           "EngineConfig.onnxruntime.inter_op_num_threads": 1})
 
     def run(img):
         r = eng(img)
