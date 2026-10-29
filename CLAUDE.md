@@ -24,8 +24,21 @@ Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR
   `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
 - Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code,
   so delete the cache after changing either.
-- `testdata/`, `poc/cache/`, `poc/results/`, `poc/models/` hold client data or large files and are never
-  committed. `docs/poc-results.md` may contain only field names, file IDs and numbers.
+
+## Client data (public repo)
+
+The GitHub repo is public. Nothing from the client documents may enter git: no supplier or client
+names, IČO/DIČ, addresses, document numbers, VS, or amounts copied from `testdata/`.
+
+- `testdata/`, `poc/cache/`, `poc/results/`, `poc/models/` and `docs/otazky-pro-hanu.md` are
+  gitignored. Committed reports (`docs/poc-results.md`) contain only field names, file IDs and
+  aggregate numbers.
+- Test fixtures and prompt examples use invented data (checksum-valid fake IČO such as `12345679`).
+  Tests that need a real document read the expected values from its `.expected.json` label.
+- The test client's IČO lives in `testdata/client_ico`; extra forbidden terms go in
+  `testdata/forbidden.txt`.
+- `.githooks/` blocks commits and pushes containing any of these values; enable it once per clone
+  with `git config core.hooksPath .githooks`. Never bypass it with `--no-verify`.
 
 ## Language conventions
 
