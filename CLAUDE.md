@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Extraction PoC (branch `poc-extraction`): a benchmark harness in `poc/`, no app yet. Results and findings
+Extraction PoC (merged to `main`; development happens on `main` until the app exists): a benchmark harness in `poc/`, no app yet. Results and findings
 are in `docs/poc-results.md`. Spec: `docs/superpowers/specs/2026-10-28-extraction-poc-design.md`.
 
 ## Commands
