@@ -17,7 +17,7 @@ Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR
 .venv/bin/python -m pytest tests/test_score.py::test_name   # one test
 .venv/bin/python -m pytest -m slow                # needs models in poc/models, ollama, testdata
 .venv/bin/python -m poc.bench RUN ocr|extract|vlm [--cpus 0]   # results in poc/results/RUN
-.venv/bin/python -m poc.score RUN [--report docs/poc-results.md]
+.venv/bin/python -m poc.score RUN [--report docs/poc-results.md] [--errors poc/results/RUN-errors.md]
 ```
 
 - Pipeline: `poc/ocr.py` (text per page) → `poc/extract.py` (rules / llama.cpp / ollama VLM) →

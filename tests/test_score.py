@@ -1,4 +1,4 @@
-from poc.score import evaluate, ocr_recall, same
+from poc.score import evaluate, ocr_missing, ocr_recall, same
 
 WANT = {"type": "receivedInvoice", "payment": "transfer", "number": "20269001",
         "variabilni_symbol": None, "issue_date": "2026-07-31", "duzp": "2026-07-31",
@@ -79,3 +79,31 @@ def test_report_shows_ocr_errors_and_exit(tmp_path, monkeypatch):
     monkeypatch.setattr(score, "RESULTS", results)
     row = next(l for l in score.report("R").splitlines() if l.startswith("| tesseract"))
     assert "| 1 | -9 |" in row
+
+
+def test_ocr_missing_names_the_lost_values():
+    text = "Faktura 2026 9001 IČO 12345679 vystaveno 31.7.2026\n12 % 4 120,75 494,49"
+    assert sorted(ocr_missing(text, WANT)) == [("due_date", "2026-08-14"), ("total", "4615.24")]
+
+
+def test_errors_lists_wrong_values_per_field(tmp_path, monkeypatch):
+    import json
+    from poc import score
+    data, text, results = tmp_path / "data", tmp_path / "text", tmp_path / "results"
+    data.mkdir()
+    (data / "a.pdf").write_text("")
+    (data / "a.pdf.expected.json").write_text(json.dumps(LABELS))
+    (text / "layer").mkdir(parents=True)
+    (text / "layer" / "a.pdf.json").write_text(json.dumps({"pages": ["Faktura 2026 9001 dodavatel Kavárna Vzor s.r.o."]}))
+    good = {k: v for k, v in WANT.items() if k != "supplier"} | {"supplier": {"ico": "12345679"}}
+    for combo, doc in [("rules+layer", good | {"due_date": "2026-08-15"}), ("llm+layer", good)]:
+        (results / "R" / combo).mkdir(parents=True)
+        (results / "R" / combo / "a.pdf.json").write_text(json.dumps({"documents": [doc]}))
+    monkeypatch.setattr(score, "TESTDATA", data)
+    monkeypatch.setattr(score, "TEXT", text)
+    monkeypatch.setattr(score, "RESULTS", results)
+    monkeypatch.setattr(score, "ares", lookup)
+    md = score.errors("R")
+    assert "| a.pdf | native | 2026-08-14 | 2026-08-15: rules+layer! |" in md  # ! = silent
+    assert "llm+layer" not in md.split("## Extraction")[1].split("### due_date")[1].split("###")[0]
+    assert "4615.24" in md.split("## Extraction")[0]  # OCR section: total missing from layer text
