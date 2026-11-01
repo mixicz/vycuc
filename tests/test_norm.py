@@ -19,3 +19,12 @@ def test_amounts_ignore_dates_times_and_integers():
 def test_dates_common_formats():
     text = "31.07.2026, 1. 8. 2026, 14/08/26, 2026-09-15, 31.02.2026"
     assert dates_in(text) == ["2026-07-31", "2026-08-01", "2026-08-14", "2026-09-15"]
+
+
+def test_time_after_yearless_date_is_not_a_year():
+    assert dates_in("Pondělí 31.08. 14:22") == []
+
+
+def test_dates_with_month_names():
+    text = "4. září 2026 / September 4, 2026 / 4 Sep 2026 / 1. července 2026 / 2. června 2026"
+    assert dates_in(text) == ["2026-09-04", "2026-09-04", "2026-09-04", "2026-07-01", "2026-06-02"]

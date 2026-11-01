@@ -107,3 +107,38 @@ def test_errors_lists_wrong_values_per_field(tmp_path, monkeypatch):
     assert "| a.pdf | native | 2026-08-14 | 2026-08-15: rules+layer! |" in md  # ! = silent
     assert "llm+layer" not in md.split("## Extraction")[1].split("### due_date")[1].split("###")[0]
     assert "4615.24" in md.split("## Extraction")[0]  # OCR section: total missing from layer text
+
+
+def test_ocr_matching_accepts_short_decimals_integers_and_glued_digits():
+    doc = {"total": 10425.0, "vat": [{"rate": 12, "base": 106.61, "vat": 16.1}]}
+    assert ocr_missing("K2 106,61 Kz  DPH 16.1  k úhradě 10\u00a0425 Kč", doc) == []
+    assert ocr_missing("10 425,00", {"total": 10425.0}) == []
+    assert ocr_missing("10\n425,00", {"total": 10425.0}) == [("total", "10425.00")]
+
+
+def test_ocr_skips_values_not_printed_and_matches_yearless_dates():
+    doc = {"issue_date": "2026-08-31", "vat": [{"rate": 21, "base": 510.55, "vat": 107.25}],
+           "not_printed": ["vat.0.base", "issue_date.year"]}
+    assert ocr_missing("Pondělí 31. srpen 18:07  DPH 107,25", doc) == []
+    assert ocr_missing("Pondělí 31.08. 18:07  DPH 107,25", doc) == []
+    assert ocr_missing("Pondělí 30. srpen  DPH 107,25", doc) == [("issue_date", "2026-08-31")]
+
+
+def test_errors_queues_values_every_engine_missed(tmp_path, monkeypatch):
+    test_errors_lists_wrong_values_per_field(tmp_path, monkeypatch)
+    from poc import score
+    queue = score.errors("R").split("### Missed by every engine")[1].split("##")[0]
+    assert "| a.pdf | native | total | 4615.24 |" in queue
+
+
+def test_ocr_matches_credit_amounts_by_magnitude():
+    # credit notes print "-544,75" or a positive amount under a refund heading
+    assert ocr_missing("Celkem -544,75 Kč", {"total": -544.75}) == []
+    assert ocr_missing("Vráceno 2 002,20", {"total": -2002.2}) == []
+
+
+def test_report_keeps_hand_written_findings():
+    from poc.score import with_findings
+    old = "# R\n| old table |\n\n## Findings\n\nHand-written.\n"
+    assert with_findings("# R\n| new table |\n", old) == "# R\n| new table |\n\n## Findings\n\nHand-written.\n"
+    assert with_findings("# R\n", None) == "# R\n"

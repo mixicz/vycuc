@@ -22,6 +22,8 @@ Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR
 
 - Pipeline: `poc/ocr.py` (text per page) → `poc/extract.py` (rules / llama.cpp / ollama VLM) →
   `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
+- A label document may list `not_printed` paths (`vat.0.base`, `issue_date.year`): values the label
+  computed or inferred. OCR recall skips them; extraction is still scored on them.
 - Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code,
   so delete the cache after changing either.
 

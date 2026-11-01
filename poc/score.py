@@ -14,7 +14,7 @@ from pathlib import Path
 
 from poc.bench import RESULTS, TESTDATA, TEXT, pdfs
 from poc.checks import ares, check
-from poc.norm import amounts_in, dates_in, fold
+from poc.norm import dates_in, fold, month_of
 from poc.ocr import has_text
 
 KEY = ["type", "number", "variabilni_symbol", "issue_date", "duzp", "due_date", "supplier.ico",
@@ -87,23 +87,60 @@ DATES = ("issue_date", "duzp", "due_date")
 
 
 def _ocr_values(doc: dict) -> list[tuple[str, object]]:
+    skip = set(doc.get("not_printed") or [])  # label values computed or inferred, not on the paper
     vals = [("supplier.ico", get(doc, "supplier.ico")), ("number", doc.get("number")),
             *[(k, doc.get(k)) for k in DATES], ("total", doc.get("total")),
-            *[(f"vat.{k}", v[k]) for v in doc.get("vat") or [] for k in ("base", "vat")]]
+            *[(f"vat.{i}.{k}", v[k]) for i, v in enumerate(doc.get("vat") or []) for k in ("base", "vat")]]
     seen = {}
     for f, v in vals:
-        if v not in (None, "") and v not in seen:
+        if v not in (None, "") and v not in seen and f not in skip:
             seen[v] = f
     return [(f, v) for v, f in seen.items()]
+
+
+_SEP = r"(?:[^\S\n]|[.,'])"  # thousands separator: any space but newline (NBSP in PDFs), dot, comma, apostrophe
+_LOOSE = re.compile(rf"\d+(?:{_SEP}\d{{3}})*(?:[.,]\d{{1,2}})?(?!\d)")
+_DAY_MONTH = re.compile(r"(?<![\d.])(\d{1,2})\.\s?(?:(\d{1,2})\.|([a-z]+))")
+
+
+def _loose_amounts(text: str) -> set[float]:
+    """Every reading of every number: 0–2 decimals, and each tail of a digit group run, so a stray
+    digit glued in front ("K2 106,61") still counts. Recall only; too generous for extraction."""
+    out = set()
+    for m in _LOOSE.finditer(text):
+        t = m.group()
+        dec = re.search(r"[.,](\d{1,2})$", t)
+        frac = int(dec.group(1).ljust(2, "0")) / 100 if dec else 0
+        groups = re.split(_SEP, t[:dec.start()] if dec else t)
+        out |= {round(int("".join(groups[k:])) + frac, 2) for k in range(len(groups))}
+    return out
+
+
+def _day_months(text: str) -> set[tuple[int, int]]:
+    out = set()
+    for m in _DAY_MONTH.finditer(fold(text)):
+        mo = int(m.group(2)) if m.group(2) else month_of(m.group(3))
+        if mo:
+            out.add((int(m.group(1)), mo))
+    return out
 
 
 def ocr_missing(text: str, doc: dict) -> list[tuple[str, str]]:
     """Label values of key fields that do not occur in the OCR text, as (field, value)."""
     flat = re.sub(r"\s", "", text)
-    amounts = {round(a, 2) for a in amounts_in(text)}
-    dates = set(dates_in(text))
-    found = lambda f, v: (v in dates if f in DATES else round(v, 2) in amounts
-                          if isinstance(v, (int, float)) else re.sub(r"\s", "", v) in flat)
+    amounts = _loose_amounts(text)
+    dates, day_months = set(dates_in(text)), _day_months(text)
+    no_year = {f for f in DATES if f"{f}.year" in (doc.get("not_printed") or [])}
+
+    def found(f, v):
+        if f in no_year:
+            return (int(v[8:]), int(v[5:7])) in day_months
+        if f in DATES:
+            return v in dates
+        if isinstance(v, (int, float)):
+            return round(abs(v), 2) in amounts  # loose readings carry no sign
+        return re.sub(r"\s", "", v) in flat
+
     return [(f, f"{v:.2f}" if isinstance(v, (int, float)) else v)
             for f, v in _ocr_values(doc) if not found(f, v)]
 
@@ -214,11 +251,13 @@ def errors(run: str) -> str:
            "## OCR", "", "Label values of key fields not found in the engine's text. The text layer is "
            "left out for scans.", "", "| file | kind | field | value | missed by |", "|---|---|---|---|---|"]
     engines = [d.name for d in sorted(TEXT.iterdir()) if d.is_dir()] if TEXT.exists() else []
+    queue = []
     for name, lab in labels.items():
-        missed = {}
+        missed, ran = {}, 0
         for e in engines:
             if e == "layer" and kind[name] == "scan":
                 continue
+            ran += 1
             r = _load(TEXT / e / f"{name}.json")
             if "error" in r:
                 missed.setdefault(("file error", r["error"]), []).append(e)
@@ -228,6 +267,12 @@ def errors(run: str) -> str:
                     missed.setdefault(fv, []).append(e)
         out += [f"| {name} | {kind[name]} | {f} | {_show(f, v)} | {', '.join(es)} |"
                 for (f, v), es in missed.items()]
+        queue += [f"| {name} | {kind[name]} | {f} | {_show(f, v)} |"
+                  for (f, v), es in missed.items() if len(es) == ran and f != "file error"]
+    out += ["", "### Missed by every engine", "", "Usually a label problem (value computed or inferred: "
+            "add it to the document's `not_printed`) or a matching gap, rarely an OCR failure. "
+            "Review against the page image.", "", "| file | kind | field | value |", "|---|---|---|---|",
+            *queue]
 
     combos = [d for d in sorted((RESULTS / run).iterdir()) if d.is_dir()]
     wrong = {f: {} for f in KEY + EXTRA + ["items"]}  # field -> file -> {"want", "outs": value -> [combo]}
@@ -271,6 +316,12 @@ def errors(run: str) -> str:
     return "\n".join(out) + "\n"
 
 
+def with_findings(new: str, old: str | None) -> str:
+    """The generated tables plus the hand-written part of the old report, from `## Findings` on."""
+    i = old.find("\n## Findings") if old else -1
+    return new + old[i:] if i >= 0 else new
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("run")
@@ -284,4 +335,5 @@ if __name__ == "__main__":
     md = report(a.run)
     print(md)
     if a.report:
-        Path(a.report).write_text(md)
+        r = Path(a.report)
+        r.write_text(with_findings(md, r.read_text() if r.exists() else None))

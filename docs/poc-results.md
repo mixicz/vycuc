@@ -6,12 +6,12 @@
 
 | engine | value recall native | value recall scans | s/page (median) | load s | peak RSS MB | model MB | file errors | exit |
 |---|---|---|---|---|---|---|---|---|
-| doctr | 99% | 93% | 6.00 | 3.2 | 1561 | 123 | 0 | 0 |
-| easyocr | 94% | 68% | 28.76 | 2.3 | 4400 | 93 | 0 | 0 |
-| layer | 99% | 0% | 0.00 | 0.0 | 27 | 0 | 0 | 0 |
-| paddleocr | 99% | 94% | 82.12 | 1.3 | 7203 | 176 | 0 | 0 |
-| rapidocr | 99% | 94% | 2.28 | 0.3 | 900 | 30 | 0 | 0 |
-| tesseract | 97% | 71% | 1.06 | 0.1 | 372 | 15 | 0 | 0 |
+| doctr | 99% | 95% | 6.00 | 3.2 | 1561 | 123 | 0 | 0 |
+| easyocr | 97% | 74% | 28.76 | 2.3 | 4400 | 93 | 0 | 0 |
+| layer | 100% | 0% | 0.00 | 0.0 | 27 | 0 | 0 | 0 |
+| paddleocr | 99% | 97% | 82.12 | 1.3 | 7203 | 176 | 0 | 0 |
+| rapidocr | 99% | 98% | 2.28 | 0.3 | 900 | 30 | 0 | 0 |
+| tesseract | 98% | 75% | 1.06 | 0.1 | 372 | 15 | 0 | 0 |
 
 ## Extraction
 
@@ -37,12 +37,12 @@
 | qwen3.5-2b+rapidocr | 58% | 73% | 51% | 48% | 48% | 69% | 85% | 45% | 69% | 54% | 90% | 79% | 79% | 72% | 51% |
 | qwen3.5-4b+doctr | 85% | 78% | 54% | 96% | 93% | 97% | 85% | 69% | 94% | 87% | 99% | 79% | 82% | 90% | 79% |
 | qwen3.5-4b+rapidocr | 85% | 82% | 58% | 96% | 93% | 97% | 88% | 70% | 90% | 88% | 99% | 79% | 84% | 88% | 79% |
-| rules+doctr | 88% | 58% | 70% | 93% | 88% | 82% | 79% | 16% | 31% | 75% | 90% | 79% | 72% | 37% | 0% |
-| rules+easyocr | 88% | 60% | 70% | 87% | 82% | 85% | 72% | 18% | 45% | 70% | 87% | 70% | 64% | 49% | 0% |
-| rules+layer | 84% | 51% | 67% | 54% | 49% | 82% | 52% | 16% | 31% | 48% | 94% | 52% | 46% | 37% | 0% |
-| rules+paddleocr | 88% | 64% | 72% | 91% | 87% | 88% | 84% | 33% | 49% | 76% | 88% | 82% | 75% | 58% | 0% |
-| rules+rapidocr | 88% | 64% | 72% | 91% | 87% | 88% | 82% | 33% | 49% | 76% | 91% | 84% | 73% | 57% | 0% |
-| rules+tesseract | 88% | 61% | 72% | 85% | 81% | 88% | 72% | 25% | 40% | 75% | 90% | 72% | 66% | 46% | 0% |
+| rules+doctr | 88% | 58% | 70% | 94% | 90% | 82% | 79% | 16% | 31% | 75% | 90% | 79% | 72% | 37% | 0% |
+| rules+easyocr | 88% | 60% | 70% | 88% | 84% | 85% | 72% | 18% | 45% | 70% | 87% | 70% | 64% | 49% | 0% |
+| rules+layer | 84% | 51% | 67% | 55% | 51% | 82% | 52% | 16% | 31% | 48% | 94% | 52% | 46% | 37% | 0% |
+| rules+paddleocr | 88% | 64% | 72% | 93% | 88% | 88% | 84% | 33% | 49% | 76% | 88% | 82% | 75% | 58% | 0% |
+| rules+rapidocr | 88% | 64% | 72% | 93% | 88% | 88% | 82% | 33% | 49% | 76% | 91% | 84% | 73% | 57% | 0% |
+| rules+tesseract | 88% | 61% | 72% | 87% | 82% | 88% | 72% | 25% | 40% | 75% | 90% | 72% | 66% | 46% | 0% |
 | vlm_qwen3.8_27b-q4_K_M | 99% | 87% | 91% | 94% | 94% | 91% | 97% | 90% | 94% | 93% | 100% | 94% | 94% | 96% | 84% |
 
 ## Findings
@@ -55,13 +55,15 @@ errors. The best CPU pipeline (Qwen3.5-4B on RapidOCR or docTR text) reaches 6/4
 needs 4.8 GB RAM and ~108 s per document (median) on one core. That is outside the hosting budget
 (1–2 GB RAM) and far from the reference.
 
-**OCR is solved: RapidOCR.** It has the best value recall on scans (94 %, tied with PaddleOCR,
+**OCR is solved: RapidOCR.** It has the best value recall on scans (98 %, PaddleOCR 97 %,
 whose PP-OCR models it runs) at 2.3 s/page and 0.9 GB peak RSS on one core, which fits the hosting
-budget. PaddleOCR needs 82 s/page and 7.2 GB for the same text. docTR is a close second (93 %,
-6 s/page, 1.6 GB). Tesseract (71 %) and EasyOCR (68 %) lose too many values on scans.
+budget. PaddleOCR needs 82 s/page and 7.2 GB for the same text. docTR is a close second (95 %,
+6 s/page, 1.6 GB). Tesseract (75 %) and EasyOCR (74 %) lose too many values on scans. RapidOCR's
+remaining misses on scans are real: a dropped table cell (ZA003), a dot read as a space in a date
+(ZAH04) and a cut-off digit in a receipt number (ZA055, which every engine misreads).
 
 **Extraction is the bottleneck, and the hard part is the VAT recapitulation and the totals.**
-- Rules: with RapidOCR text they read dates, IČO and type at 82–91 %, but VAT lines at 33 % and
+- Rules: with RapidOCR text they read dates, IČO and type at 82–93 %, but VAT lines at 33 % and
   total at 49 %. They pick item lines instead of the VAT summary and miss rounding.
 - Small CPU LLMs: the 2B is not usable (VAT 45–48 %, type 58 %, issue date 43–48 %). The 4B gets
   dates and totals at 90–97 % but still fails the VAT summary (69–70 %: duplicated lines, item
@@ -84,6 +86,13 @@ VS, dates, type.
   llama.cpp's prompt-processing threads (`n_threads_batch`) and ONNX Runtime's pool in RapidOCR. Both
   are fixed and RapidOCR and the LLMs were rerun on one core. The 2B got ~17 % faster per document
   after the fix; the 4B median did not change (~108 s).
+- OCR value recall looks for the label's key values (IČO, number, dates, total, VAT lines) in
+  the engine's text. Amounts match with 0–2 decimals, any thousands separator, either sign, and with
+  stray digits glued in front ("K2 106,61"); dates also match with Czech or English month names.
+  Label values that are not printed (a VAT base the label computed, a year inferred for a receipt)
+  are listed in the label's `not_printed` and skipped. Values every engine misses are listed for
+  review in the local error listing (`poc.score --errors`). An earlier, stricter matching put scan
+  recall 3–6 points lower for every engine.
 - Pages are rendered at 300 DPI but capped at the pixel area of A4 at 300 DPI. Some photo-PDFs have
   page boxes several times A4, and an uncapped render inflated Tesseract's RSS to 2.9 GB. OCR s/page
   excludes rasterisation.
