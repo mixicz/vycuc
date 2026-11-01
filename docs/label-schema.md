@@ -1,8 +1,6 @@
 # Ground-truth label schema
 
-One `<file>.expected.json` next to each test document in `testdata/` (gitignored).
-A file holds one or more documents (several receipts on one scan → several entries).
-Values are what is **printed** on the document; `null` = not present/not legible.
+One `<file>.expected.json` next to each test document in `testdata/` (gitignored). A file holds one or more documents (several receipts on one scan → several entries). Values are what is **printed** on the document; `null` = not present/not legible.
 
 ```jsonc
 {
@@ -38,5 +36,4 @@ Values are what is **printed** on the document; `null` = not present/not legible
 }
 ```
 
-Pohoda agenda is derived, not labelled: invoice types map 1:1 to `invoiceType`;
-`receipt` + `cash` → pokladna (`voucher`), `receipt` + anything else → `commitment` (ostatní závazky).
+Pohoda agenda is derived, not labelled: invoice types map 1:1 to `invoiceType`; `receipt` + `cash` → pokladna (`voucher`), `receipt` + anything else → `commitment` (ostatní závazky).

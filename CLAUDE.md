@@ -4,13 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Status
 
-Extraction PoC (merged to `main`; development happens on `main` until the app exists): a benchmark harness in `poc/`, no app yet. Results and findings
-are in `docs/poc-results.md`. Spec: `docs/superpowers/specs/2026-10-28-extraction-poc-design.md`.
+Extraction PoC (merged to `main`; development happens on `main` until the app exists): a benchmark harness in `poc/`, no app yet. Results and findings are in `docs/poc-results.md`. Spec: `docs/superpowers/specs/2026-10-28-extraction-poc-design.md`.
 
 ## Commands
 
-Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR, llama.cpp),
-`.venv-paddle` (PaddleOCR), `.venv-torch` (docTR, EasyOCR). Requirements are in `poc/requirements*.txt`.
+Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR, llama.cpp), `.venv-paddle` (PaddleOCR), `.venv-torch` (docTR, EasyOCR). Requirements are in `poc/requirements*.txt`.
 
 ```
 .venv/bin/python -m pytest -m 'not slow'          # fast tests
@@ -20,27 +18,18 @@ Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR
 .venv/bin/python -m poc.score RUN [--report docs/poc-results.md] [--errors poc/results/RUN-errors.md]
 ```
 
-- Pipeline: `poc/ocr.py` (text per page) → `poc/extract.py` (rules / llama.cpp / ollama VLM) →
-  `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
-- A label document may list `not_printed` paths (`vat.0.base`, `issue_date.year`): values the label
-  computed or inferred. OCR recall skips them; extraction is still scored on them.
-- Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code,
-  so delete the cache after changing either.
+- Pipeline: `poc/ocr.py` (text per page) → `poc/extract.py` (rules / llama.cpp / ollama VLM) → `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
+- A label document may list `not_printed` paths (`vat.0.base`, `issue_date.year`): values the label computed or inferred. OCR recall skips them; extraction is still scored on them.
+- Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code, so delete the cache after changing either.
 
 ## Client data (public repo)
 
-The GitHub repo is public. Nothing from the client documents may enter git: no supplier or client
-names, IČO/DIČ, addresses, document numbers, VS, or amounts copied from `testdata/`.
+The GitHub repo is public. Nothing from the client documents may enter git: no supplier or client names, IČO/DIČ, addresses, document numbers, VS, or amounts copied from `testdata/`.
 
-- `testdata/`, `poc/cache/`, `poc/results/`, `poc/models/` and `docs/otazky-pro-hanu.md` are
-  gitignored. Committed reports (`docs/poc-results.md`) contain only field names, file IDs and
-  aggregate numbers.
-- Test fixtures and prompt examples use invented data (checksum-valid fake IČO such as `12345679`).
-  Tests that need a real document read the expected values from its `.expected.json` label.
-- The test client's IČO lives in `testdata/client_ico`; extra forbidden terms go in
-  `testdata/forbidden.txt`.
-- `.githooks/` blocks commits and pushes containing any of these values; enable it once per clone
-  with `git config core.hooksPath .githooks`. Never bypass it with `--no-verify`.
+- `testdata/`, `poc/cache/`, `poc/results/`, `poc/models/` and `docs/otazky-pro-hanu.md` are gitignored. Committed reports (`docs/poc-results.md`) contain only field names, file IDs and aggregate numbers.
+- Test fixtures and prompt examples use invented data (checksum-valid fake IČO such as `12345679`). Tests that need a real document read the expected values from its `.expected.json` label.
+- The test client's IČO lives in `testdata/client_ico`; extra forbidden terms go in `testdata/forbidden.txt`.
+- `.githooks/` blocks commits and pushes containing any of these values; enable it once per clone with `git config core.hooksPath .githooks`. Never bypass it with `--no-verify`.
 
 ## Language conventions
 
