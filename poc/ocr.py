@@ -20,6 +20,44 @@ def text_layer(pdf: Path) -> list[str]:
     return [page.get_textpage().get_text_bounded() for page in pdfium.PdfDocument(pdf)]
 
 
+def _r(v: float) -> float:
+    return round(v, 4)
+
+
+def layer_words(chars, w: float, h: float) -> list[list]:
+    """[(char, (left, bottom, right, top) in points)] -> words, as in rapid_words."""
+    words, cur, line = [], None, 0
+    for c, (l, b, r, t) in chars + [(" ", (0, 0, 0, 0))]:
+        if c.isspace():
+            if cur:
+                words.append([_r(cur[0] / w), _r(1 - cur[3] / h), _r(cur[2] / w), _r(1 - cur[1] / h),
+                              cur[4], 1.0, line])
+            cur = None
+            line += c == "\n"
+        elif cur is None:
+            cur = [l, b, r, t, c]
+        else:
+            cur = [min(cur[0], l), min(cur[1], b), max(cur[2], r), max(cur[3], t), cur[4] + c]
+    return words
+
+
+def text_words(pdf: Path) -> list[list[list]]:
+    out = []
+    for page in pdfium.PdfDocument(pdf):
+        tp = page.get_textpage()
+        chars = [(tp.get_text_range(i, 1), tp.get_charbox(i)) for i in range(tp.count_chars())]
+        out.append(layer_words(chars, *page.get_size()))
+    return out
+
+
+def rapid_words(lines, w: float, h: float) -> list[list]:
+    """RapidOCR word_results -> [[x0, y0, x1, y1, text, confidence, line]], coordinates as page fractions,
+    origin top-left, so text-layer and OCR words share one shape whatever the render scale."""
+    return [[_r(x0 / w), _r(y0 / h), _r(x1 / w), _r(y1 / h), t, _r(conf), n]
+            for n, words in enumerate(lines) for t, conf, box in words
+            for x0, y0, x1, y1 in [_quad(box)]]
+
+
 def render(pdf: Path, dpi: int = DPI):
     """Yield pages one at a time, so peak RSS reflects the engine, not the page count."""
     for p in pdfium.PdfDocument(pdf):
@@ -55,7 +93,7 @@ def _tesseract():
 
     def run(img):
         api.SetImage(img)
-        return api.GetUTF8Text()
+        return api.GetUTF8Text(), None
     return run
 
 
@@ -68,10 +106,11 @@ def _rapidocr():
                            "EngineConfig.onnxruntime.inter_op_num_threads": 1})
 
     def run(img):
-        r = eng(img)
+        r = eng(img, return_word_box=True)
         if r.boxes is None:
-            return ""
-        return join_boxes([(*_quad(b), t) for b, t in zip(r.boxes, r.txts)])
+            return "", []
+        return (join_boxes([(*_quad(b), t) for b, t in zip(r.boxes, r.txts)]),
+                rapid_words(r.word_results, *img.size))
     return run
 
 
@@ -82,7 +121,7 @@ def _paddleocr():
 
     def run(img):
         (r,) = eng.predict(np.array(img)[:, :, ::-1])  # RGB -> BGR
-        return join_boxes([(*b, t) for b, t in zip(r["rec_boxes"].tolist(), r["rec_texts"])])
+        return join_boxes([(*b, t) for b, t in zip(r["rec_boxes"].tolist(), r["rec_texts"])]), None
     return run
 
 
@@ -90,14 +129,14 @@ def _doctr():
     import numpy as np
     from doctr.models import ocr_predictor
     model = ocr_predictor(pretrained=True)
-    return lambda img: model([np.array(img)]).render()
+    return lambda img: (model([np.array(img)]).render(), None)
 
 
 def _easyocr():
     import easyocr
     import numpy as np
     reader = easyocr.Reader(["cs", "en"], gpu=False)
-    return lambda img: join_boxes([(*_quad(b), t) for b, t, _ in reader.readtext(np.array(img))])
+    return lambda img: (join_boxes([(*_quad(b), t) for b, t, _ in reader.readtext(np.array(img))]), None)
 
 
 ENGINES = {"tesseract": _tesseract, "rapidocr": _rapidocr, "paddleocr": _paddleocr,
@@ -130,13 +169,18 @@ def main(engine: str, out_dir: str, pdfs: list[str]) -> None:
                 t = time.perf_counter()
                 pages = text_layer(pdf)
                 secs = [(time.perf_counter() - t) / max(len(pages), 1)] * len(pages)
+                words = text_words(pdf)  # outside the timing, so layer seconds stay comparable
             else:
-                pages, secs = [], []
+                pages, secs, words = [], [], []
                 for img in render(pdf):
                     t = time.perf_counter()
-                    pages.append(run(img))
+                    text, ws = run(img)
                     secs.append(time.perf_counter() - t)
+                    pages.append(text)
+                    words.append(ws)
             rec = {"pages": pages, "seconds": secs}
+            if None not in words:
+                rec["words"] = words
         except Exception as e:  # one bad file must not stop the benchmark
             rec = {"error": repr(e)}
         (out / f"{pdf.name}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1))

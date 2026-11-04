@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 from PIL import Image, ImageDraw, ImageFont
 
-from poc.ocr import ENGINES, MAX_PIXELS, has_text, join_boxes, render, text_layer
+from poc.ocr import (ENGINES, MAX_PIXELS, has_text, join_boxes, layer_words, rapid_words, render,
+                     text_layer, text_words)
 
 ROOT = Path(__file__).resolve().parent.parent
 ZA001 = ROOT / "testdata" / "zari" / "ZA001.pdf"
@@ -46,7 +47,7 @@ def test_text_layer_of_native_pdf():
 def test_engine_reads_czech_sample(engine):
     if importlib.util.find_spec(MODULE[engine]) is None:
         pytest.skip(f"{engine} not installed in this venv")
-    text = ENGINES[engine]()(sample())
+    text, _ = ENGINES[engine]()(sample())
     assert "12345679" in text
     assert "615,24" in text  # wiring check; misreads like "1l 615,24" are benchmark results
 
@@ -79,3 +80,29 @@ def test_render_caps_oversized_pages_at_a4_300dpi_area():
     assert page.size[0] * page.size[1] <= MAX_PIXELS * 1.01  # pdfium rounds dims up
     a4 = next(iter(render(ZA001)))
     assert a4.size[0] > 2400  # normal A4 pages keep full 300 DPI
+
+
+def test_layer_words_split_on_spaces_and_flip_y():
+    # pdfium boxes are (left, bottom, right, top) in points, origin bottom-left
+    chars = [("I", (10, 90, 14, 100)), ("Č", (14, 90, 20, 100)), (" ", (20, 90, 22, 90)),
+             ("1", (22, 90, 26, 100)), ("\r", (26, 90, 26, 90)), ("\n", (26, 90, 26, 90)),
+             ("K", (10, 40, 16, 50))]
+    assert layer_words(chars, 100, 200) == [[0.1, 0.5, 0.2, 0.55, "IČ", 1.0, 0],
+                                            [0.22, 0.5, 0.26, 0.55, "1", 1.0, 0],
+                                            [0.1, 0.75, 0.16, 0.8, "K", 1.0, 1]]
+
+
+def test_rapid_words_normalize_boxes_and_number_lines():
+    lines = [(("ACTION", 0.9, [[0, 0], [50, 0], [50, 10], [0, 10]]),),
+             (("4", 0.8, [[0, 20], [10, 20], [10, 30], [0, 30]]),
+              ("615,24", 0.7, [[12, 21], [40, 20], [40, 30], [12, 31]]))]
+    assert rapid_words(lines, 100, 50) == [[0.0, 0.0, 0.5, 0.2, "ACTION", 0.9, 0],
+                                           [0.0, 0.4, 0.1, 0.6, "4", 0.8, 1],
+                                           [0.12, 0.4, 0.4, 0.62, "615,24", 0.7, 1]]
+
+
+@pytest.mark.skipif(not ZA001.exists(), reason="testdata missing")
+def test_layer_words_match_text_layer():
+    (words, *_), (text, *_) = text_words(ZA001), text_layer(ZA001)
+    assert " ".join(w[4] for w in words) == " ".join(text.split())
+    assert all(0 <= v <= 1 for w in words for v in w[:4])
