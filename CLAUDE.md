@@ -50,8 +50,7 @@ The GitHub repo is public. Nothing from the client documents may enter git: no s
 - **Document classification → Pohoda agenda:**
   - Invoice received → faktury přijaté; invoice issued → faktury vydané
   - Advance invoices (zálohové faktury) get their own section
-  - Receipt paid in cash → pokladna
-  - Receipt paid by card, or payment method unknown → ostatní závazky. Fallback if detection is unreliable: send all receipts to ostatní závazky.
+  - Receipts → ostatní závazky by default, whatever the payment method. The accountant (2026-11): it differs per client company, most use ostatní závazky; for the few that book cash receipts to pokladna she switches it herself. So: a per-company setting, default ostatní závazky.
   - Confirmed by the accountant (2026-11): invoices paid in cash or prepaid by card still go to faktury přijaté, and receipts made out to the client company (with its IČO) go to ostatní závazky; she records payments by hand. Proforma invoices → přijaté zálohové faktury. Payment reminders (e.g. insurance) → ostatní závazky. Foreign-currency invoices → faktury přijaté in that currency (reverse charge is booked by hand).
   - Handled by hand, not exported: tax documents for received advances (ZDD, they must be linked to the advance in Pohoda), returns paid with vouchers, private expenses. The review UI marks such a document "not exported" (it stays in the list; whether to remove it entirely is left for UX polish).
   - Card terminal slips attached to a receipt are ignored, never a separate document.

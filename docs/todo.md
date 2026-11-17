@@ -11,9 +11,9 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
   - Receipts: when there is no explicit document number, use the number printed under the barcode (OCR text). Check our receipts to confirm the barcode number is always printed; barcode decoding is deferred until it proves needed. Re-check the receipt `number` labels against this rule and rescore.
   - Agenda rules in the extractor/mock: receipts with the client's IČO → ostatní závazky; invoices stay in faktury přijaté whatever the payment method.
   - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
-- Questions for Hana (local questions file): 14 (do cash receipts without the client's IČO go to pokladna or ostatní závazky?) and 18 (what she fills in Pohoda beyond the document: předkontace, členění DPH, středisko, text, číselná řada; blocks the export design).
+- Questions for Hana (local questions file): 18 (what she fills in Pohoda beyond the document: předkontace, členění DPH, středisko, text, číselná řada; blocks the export design).
 - Hana has a test company in IPodnik for trying XML imports, so export tests never touch real books.
-- Pohoda export: first version in `poc/pohoda.py`, the test month exports and validates. Next: Hana test-imports `poc/results/pohoda/zari.xml` (generated with her test company's IČO via `--ico`) and reports what lands wrong; then question 18 (předkontace etc.) and 14 (pokladna).
+- Pohoda export: first version in `poc/pohoda.py`, the test month exports and validates. Next: Hana test-imports `poc/results/pohoda/zari.xml` (generated with her test company's IČO via `--ico`) and reports what lands wrong; then question 18 (předkontace etc.). Later, with per-company settings: optional pokladna for cash receipts (question 14).
 
 ## Ideas
 

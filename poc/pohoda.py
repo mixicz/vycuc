@@ -17,7 +17,8 @@ for _p, _u in NS.items():
     ET.register_namespace(_p, _u)
 
 # label type -> Pohoda invoiceType; None = booked by hand, not exported.
-# ponytail: receipts all go to ostatní závazky; pokladna (voucher.xsd) waits on question 14.
+# ponytail: receipts all go to ostatní závazky (the default for most companies); pokladna (voucher.xsd)
+# for cash receipts becomes a per-company setting once the app has companies.
 TYPES = {"receivedInvoice": "receivedInvoice", "receivedCreditNotice": "receivedCreditNotice",
          "receivedProformaInvoice": "receivedAdvanceInvoice", "receivedAdvanceInvoice": "receivedAdvanceInvoice",
          "commitment": "commitment", "receipt": "commitment", "receivedAdvanceTaxDocument": None}
