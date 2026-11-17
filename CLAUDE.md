@@ -50,6 +50,12 @@ The GitHub repo is public. Nothing from the client documents may enter git: no s
   - Advance invoices (zálohové faktury) get their own section
   - Receipt paid in cash → pokladna
   - Receipt paid by card, or payment method unknown → ostatní závazky. Fallback if detection is unreliable: send all receipts to ostatní závazky.
+  - Confirmed by the accountant (2026-11): invoices paid in cash or prepaid by card still go to faktury přijaté, and receipts made out to the client company (with its IČO) go to ostatní závazky; she records payments by hand. Proforma invoices → přijaté zálohové faktury. Payment reminders (e.g. insurance) → ostatní závazky. Foreign-currency invoices → faktury přijaté in that currency (reverse charge is booked by hand).
+  - Handled by hand, not exported: tax documents for received advances (ZDD, they must be linked to the advance in Pohoda), returns paid with vouchers, private expenses. The review UI needs a way to mark a document as "not exported / manual".
+  - Card terminal slips attached to a receipt are ignored, never a separate document.
+- **Dates:** DUZP missing on the document → use the issue date.
+- **Receipt number:** when the receipt has no explicit document number, use the number from its barcode (the accountant uses it to look documents up).
+- **Volume:** about 300 documents a month for one accountant.
 - **Fields to extract:** datum vystavení, DUZP (datum zdanitelného plnění), splatnost; supplier name, IČO, DIČ, address; invoice number, variabilní symbol; line items (split when there are several); base without VAT, VAT rate, VAT amount, total.
 - **Multi-currency**, CZK primary.
 - **Dedup:** detect an invoice already imported, by invoice number (per company). This is the main reason to persist anything.

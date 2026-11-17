@@ -6,13 +6,18 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
 
 - **Review UI mock with Hana.** The mock (`poc/results/mocks/`, gitignored, built by `build.py` from real documents) has two views: "Detail dokladu" (form beside the document; click takes the whole value, drag a part, right-click opens a menu to join a value to a field, take one word, or pick any field) and "Dávka v tabulce" (batch table; findings for fields outside the table link to the detail). Collect her feedback on the UI philosophy, including whether the table should be self-sufficient (expandable rows with all fields) or stay a triage view next to the detail.
 - **Design the linking data model** after Hana's feedback. For each confirmed field, store the source tokens (word boxes), the final value, whether the user corrected it, and the supplier IČO. This is what supplier templates (below) learn from, so it must be in place from the start.
-- Hana's answers to the open questions in the local `docs/otazky-pro-hanu.md` (gitignored), notably 11, 12 and 13 (share of regular vs one-time suppliers, for supplier templates).
+- Act on Hana's answers (questions 1–13, recorded in CLAUDE.md Requirements):
+  - Review UI: add a "not exported / manual" state for documents she books by hand (advance tax documents, voucher returns, private expenses).
+  - Receipts: when there is no explicit document number, use the barcode number. Check whether it equals a printed code (OCR suffices) or needs barcode decoding (a CPU library such as zxing-cpp; verify per the package rules). Re-check the receipt `number` labels against this rule and rescore.
+  - Agenda rules in the extractor/mock: receipts with the client's IČO → ostatní závazky; invoices stay in faktury přijaté whatever the payment method.
+  - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
+- Follow-up questions 14–17 for Hana (local questions file).
 
 ## Ideas
 
 ### Supplier templates learned from reviews
 
-Goal: converge to a high success rate with cheap, deterministic parsing, because most suppliers repeat over long periods.
+Goal: converge to a high success rate with cheap, deterministic parsing, because most suppliers repeat over long periods (the accountant estimates about 80 % of documents).
 
 - Keep the generic rule parser as the baseline and keep tuning it.
 - Learn a template per supplier from confirmed documents instead of hand-writing specialized parsers: for each field, where the value sits relative to a nearby label ("Celkem" → number to its right). Relative anchors survive receipts of varying length; absolute positions don't. One or two confirmed documents should be enough; no code per supplier.
