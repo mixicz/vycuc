@@ -11,7 +11,7 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
   - Receipts: when there is no explicit document number, use the number printed under the barcode (OCR text). Check our receipts to confirm the barcode number is always printed; barcode decoding is deferred until it proves needed. Re-check the receipt `number` labels against this rule and rescore.
   - Agenda rules in the extractor/mock: receipts with the client's IČO → ostatní závazky; invoices stay in faktury přijaté whatever the payment method.
   - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
-- Question 14 for Hana (local questions file): do cash receipts without the client's IČO go to pokladna or ostatní závazky? 15–17 answered.
+- Questions for Hana (local questions file): 14 (do cash receipts without the client's IČO go to pokladna or ostatní závazky?) and 18 (what she fills in Pohoda beyond the document: předkontace, členění DPH, středisko, text, číselná řada; blocks the export design).
 
 ## Ideas
 
