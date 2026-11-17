@@ -12,6 +12,7 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
   - Agenda rules in the extractor/mock: receipts with the client's IČO → ostatní závazky; invoices stay in faktury přijaté whatever the payment method.
   - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
 - Questions for Hana (local questions file): 14 (do cash receipts without the client's IČO go to pokladna or ostatní závazky?) and 18 (what she fills in Pohoda beyond the document: předkontace, členění DPH, středisko, text, číselná řada; blocks the export design).
+- Hana has a test company in IPodnik for trying XML imports, so export tests never touch real books.
 
 ## Ideas
 
