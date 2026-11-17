@@ -16,9 +16,11 @@ Three venvs keep conflicting stacks apart: `.venv` (harness, Tesseract, RapidOCR
 .venv/bin/python -m pytest -m slow                # needs models in poc/models, ollama, testdata
 .venv/bin/python -m poc.bench RUN ocr|extract|vlm [--cpus 0]   # results in poc/results/RUN
 .venv/bin/python -m poc.score RUN [--report docs/poc-results.md] [--errors poc/results/RUN-errors.md]
+.venv/bin/python -m poc.pohoda --fetch-schemas            # once: Stormware XSDs for the schema test
+.venv/bin/python -m poc.pohoda --ico ICO -o poc/results/pohoda/X.xml testdata/zari/*.expected.json   # Pohoda XML from labels
 ```
 
-- Pipeline: `poc/ocr.py` (text per page; the text layer and RapidOCR also store `words`: `[x0, y0, x1, y1, text, confidence, line]` with coordinates as page fractions) → `poc/extract.py` (rules / llama.cpp / ollama VLM) → `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`).
+- Pipeline: `poc/ocr.py` (text per page; the text layer and RapidOCR also store `words`: `[x0, y0, x1, y1, text, confidence, line]` with coordinates as page fractions) → `poc/extract.py` (rules / llama.cpp / ollama VLM) → `poc/checks.py` (IČO, DIČ, VAT sums, ARES) → `poc/score.py` (against `testdata/zari/*.expected.json`). `poc/pohoda.py` writes Pohoda XML (dataPack v2, totals per VAT rate, no line items); format notes in `docs/pohoda-xml.md`.
 - A label document may list `not_printed` paths (`vat.0.base`, `issue_date.year`): values the label computed or inferred. OCR recall skips them; extraction is still scored on them.
 - Extraction results are cached by input hash in `poc/cache/extract/`; the key ignores prompt and code, so delete the cache after changing either.
 

@@ -36,4 +36,4 @@ One `<file>.expected.json` next to each test document in `testdata/` (gitignored
 }
 ```
 
-Pohoda agenda is derived, not labelled: invoice types map 1:1 to `invoiceType`; `receipt` + `cash` → pokladna (`voucher`), `receipt` + anything else → `commitment` (ostatní závazky).
+Pohoda agenda is derived, not labelled; the mapping is `TYPES` in `poc/pohoda.py`. For now every `receipt` → `commitment` (ostatní závazky); whether cash receipts go to pokladna (`voucher`) waits on question 14 for the accountant.

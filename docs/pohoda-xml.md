@@ -1,6 +1,6 @@
 # Pohoda XML import: notes
 
-Findings from Stormware's XML schemas (version 2, `https://www.stormware.cz/xml/schema/version_2/*.xsd`) and sample files (`https://www.stormware.cz/xml/samples/version_2/import/`), read on 2026-11-17. Input for the export design; nothing is built yet. Not yet verified by an import (Hana has a test company in IPodnik for that).
+Findings from Stormware's XML schemas (version 2, `https://www.stormware.cz/xml/schema/version_2/*.xsd`) and sample files (`https://www.stormware.cz/xml/samples/version_2/import/`), read on 2026-11-17. First version built in `poc/pohoda.py` (header + totals per VAT rate, receipts → ostatní závazky, ZDD skipped, Windows-1250, validated against the XSDs with `xmllint` in `tests/test_pohoda.py`). Not yet verified by an import (Hana has a test company in IPodnik for that).
 
 ## File
 

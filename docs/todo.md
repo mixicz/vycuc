@@ -13,7 +13,7 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
   - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
 - Questions for Hana (local questions file): 14 (do cash receipts without the client's IČO go to pokladna or ostatní závazky?) and 18 (what she fills in Pohoda beyond the document: předkontace, členění DPH, středisko, text, číselná řada; blocks the export design).
 - Hana has a test company in IPodnik for trying XML imports, so export tests never touch real books.
-- Pohoda export: schema notes in `docs/pohoda-xml.md`; design in progress.
+- Pohoda export: first version in `poc/pohoda.py`, the test month exports and validates. Next: Hana test-imports `poc/results/pohoda/zari.xml` (generated with her test company's IČO via `--ico`) and reports what lands wrong; then question 18 (předkontace etc.) and 14 (pokladna).
 
 ## Ideas
 
