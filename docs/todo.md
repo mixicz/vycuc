@@ -20,6 +20,7 @@ Goal: converge to a high success rate with cheap, deterministic parsing, because
 - Templates belong to the supplier, not the client company, so they are shared across all clients.
 - Mark a template stale when checks fail or users keep correcting it (the supplier changed its layout), then re-learn.
 - Metric: share of fields the user changed, per supplier. It shows where templates are missing or broken.
+- Test data (one month, 68 documents): 48 distinct suppliers, 13 of them appear more than once. 33 documents come from repeating suppliers, so a template learned from each supplier's first document would cover 20 documents (29 %) within the month. Invoices repeat more than receipts (21 of 37 invoices vs 10 of 25 receipts come from repeating suppliers). Across months the share should be much higher; measure it once there is a second month of data.
 - Limit: OCR quality. A template finds the right place but cannot fix a misread digit.
 
 ## Housekeeping
