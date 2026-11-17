@@ -6,7 +6,7 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
 
 - **Review UI mock with Hana.** The mock (`poc/results/mocks/`, gitignored, built by `build.py` from real documents) has two views: "Detail dokladu" (form beside the document; click takes the whole value, drag a part, right-click opens a menu to join a value to a field, take one word, or pick any field) and "Dávka v tabulce" (batch table; findings for fields outside the table link to the detail). Collect her feedback on the UI philosophy, including whether the table should be self-sufficient (expandable rows with all fields) or stay a triage view next to the detail.
 - **Design the linking data model** after Hana's feedback. For each confirmed field, store the source tokens (word boxes), the final value, whether the user corrected it, and the supplier IČO. This is what supplier templates (below) learn from, so it must be in place from the start.
-- Hana's answers to the open questions in the local `docs/otazky-pro-hanu.md` (gitignored), notably 11 and 12.
+- Hana's answers to the open questions in the local `docs/otazky-pro-hanu.md` (gitignored), notably 11, 12 and 13 (share of regular vs one-time suppliers, for supplier templates).
 
 ## Ideas
 
