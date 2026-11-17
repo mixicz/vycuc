@@ -7,11 +7,11 @@ Open work and ideas, kept here so they survive between sessions. Public repo: no
 - **Review UI mock with Hana.** The mock (`poc/results/mocks/`, gitignored, built by `build.py` from real documents) has two views: "Detail dokladu" (form beside the document; click takes the whole value, drag a part, right-click opens a menu to join a value to a field, take one word, or pick any field) and "Dávka v tabulce" (batch table; findings for fields outside the table link to the detail). Collect her feedback on the UI philosophy, including whether the table should be self-sufficient (expandable rows with all fields) or stay a triage view next to the detail.
 - **Design the linking data model** after Hana's feedback. For each confirmed field, store the source tokens (word boxes), the final value, whether the user corrected it, and the supplier IČO. This is what supplier templates (below) learn from, so it must be in place from the start.
 - Act on Hana's answers (questions 1–13, recorded in CLAUDE.md Requirements):
-  - Review UI: add a "not exported / manual" state for documents she books by hand (advance tax documents, voucher returns, private expenses).
-  - Receipts: when there is no explicit document number, use the barcode number. Check whether it equals a printed code (OCR suffices) or needs barcode decoding (a CPU library such as zxing-cpp; verify per the package rules). Re-check the receipt `number` labels against this rule and rescore.
+  - Review UI: add a "not exported" mark (just a mark for now; removal is a UX-polish question) for documents she books by hand (advance tax documents, voucher returns, private expenses).
+  - Receipts: when there is no explicit document number, use the number printed under the barcode (OCR text). Check our receipts to confirm the barcode number is always printed; barcode decoding is deferred until it proves needed. Re-check the receipt `number` labels against this rule and rescore.
   - Agenda rules in the extractor/mock: receipts with the client's IČO → ostatní závazky; invoices stay in faktury přijaté whatever the payment method.
   - Supplier templates are worth it: she estimates about 80 % of documents, mostly invoices, come from repeating suppliers.
-- Follow-up questions 14–17 for Hana (local questions file).
+- Question 14 for Hana (local questions file): do cash receipts without the client's IČO go to pokladna or ostatní závazky? 15–17 answered.
 
 ## Ideas
 
