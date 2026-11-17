@@ -49,5 +49,5 @@ Without line items, the totals go into `invoiceSummary`:
 
 - What Hana fills beyond the document: předkontace, členění DPH, středisko, text, number series (question 18).
 - Pokladna: which `cashAccount`, and whether cash receipts go there at all (question 14).
-- Summary only, or line items too.
+- Line items: not in the first version (decided 2026-11-17); totals per VAT rate only.
 - Encoding (UTF-8 vs Windows-1250), and whether the supplier is matched to the address book.
