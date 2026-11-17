@@ -55,7 +55,7 @@ The GitHub repo is public. Nothing from the client documents may enter git: no s
   - Card terminal slips attached to a receipt are ignored, never a separate document.
 - **Dates:** DUZP missing on the document → use the issue date.
 - **Receipt number:** when the receipt has no explicit document number, use the number printed under its barcode (the accountant types it from that text to look documents up). Barcode decoding is deferred until OCR of the printed text proves insufficient.
-- **Volume:** about 300 documents a month per accountant, roughly 600 in total.
+- **Volume:** about 300 documents a month per accountant, roughly 600 in total. Expected to grow gradually (that is why the app is being built), so size with reserve; even several times this volume should be fine on cheap hardware.
 - **Fields to extract:** datum vystavení, DUZP (datum zdanitelného plnění), splatnost; supplier name, IČO, DIČ, address; invoice number, variabilní symbol; line items (split when there are several); base without VAT, VAT rate, VAT amount, total.
 - **Multi-currency**, CZK primary.
 - **Dedup:** detect an invoice already imported, by invoice number (per company). This is the main reason to persist anything.
